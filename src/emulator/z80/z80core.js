@@ -43,7 +43,7 @@ function Z80(coreParameter)
                 (typeof core.io_read !== "function")  || (typeof core.io_write !== "function"))
       throw("Z80: Core object is missing required functions.");
    
-   if (this === window)
+   if (typeof window !== "undefined" && this === window)
       throw("Z80: This function is a constructor; call it using operator new.");
 
    // All right, let's initialize the registers.
