@@ -1,20 +1,16 @@
 import { useEffect } from 'react';
 import { useIdeStore } from './app/store';
 import { Toolbar } from './components/Toolbar';
-import { CodeMirrorHost } from './components/CodeMirrorHost';
-import { EmulatorPane } from './components/EmulatorPane';
-import { AiPanel } from './components/AiPanel';
+import { Workspace } from './components/Workspace';
 import { AiSettingsDialog } from './components/AiSettingsDialog';
 import { TransferDialog } from './components/TransferDialog';
 import { StatusBar } from './components/StatusBar';
 import { saveAutosave } from './storage/settings';
+import { isMobileViewport } from './app/useMediaQuery';
 
 export default function App() {
-  const dialect = useIdeStore((s) => s.dialect);
-  const docOverride = useIdeStore((s) => s.docOverride);
-  const setSource = useIdeStore((s) => s.setSource);
-  const aiPanelOpen = useIdeStore((s) => s.aiPanelOpen);
   const requestRun = useIdeStore((s) => s.requestRun);
+  const runRequest = useIdeStore((s) => s.runRequest);
 
   // Autosave the document every 2s while dirty
   useEffect(() => {
@@ -37,16 +33,18 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [requestRun]);
 
+  // On mobile, jump to the Preview tab whenever a run is requested
+  // (covers the toolbar Run button, the FAB, and Ctrl+Enter)
+  useEffect(() => {
+    if (runRequest > 0 && isMobileViewport()) {
+      useIdeStore.getState().setMobileTab('preview');
+    }
+  }, [runRequest]);
+
   return (
     <div className="app">
       <Toolbar />
-      <div className={`workspace ${aiPanelOpen ? 'with-ai' : ''}`}>
-        <div className="editor-pane">
-          <CodeMirrorHost dialect={dialect} override={docOverride} onChange={setSource} />
-        </div>
-        <EmulatorPane />
-        {aiPanelOpen && <AiPanel />}
-      </div>
+      <Workspace />
       <StatusBar />
       <AiSettingsDialog />
       <TransferDialog />

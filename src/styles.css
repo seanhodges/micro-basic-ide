@@ -88,6 +88,21 @@ button.active {
   color: var(--accent);
 }
 
+button.run {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #08210e;
+  font-weight: 600;
+}
+
+button.run:hover:not(:disabled) {
+  border-color: #7fe89a;
+}
+
+button.icon-btn {
+  padding: 5px 8px;
+}
+
 button.linklike {
   background: none;
   border: none;
@@ -161,20 +176,51 @@ textarea {
 .workspace {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr minmax(540px, auto);
+  /* grid-template-columns is set inline (driven by the split ratio) */
   min-height: 0;
 }
 
-.workspace.with-ai {
-  grid-template-columns: 1fr minmax(540px, auto) 340px;
+.workspace.dragging {
+  user-select: none;
+}
+
+.divider {
+  background: var(--border);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.divider:hover,
+.workspace.dragging .divider {
+  background: var(--accent);
 }
 
 .editor-pane {
+  position: relative;
   min-width: 0;
   min-height: 0;
-  border-right: 1px solid var(--border);
   display: flex;
   overflow: hidden;
+}
+
+.monitor-pane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.monitor-pane > .emulator-pane {
+  flex: 1;
+}
+
+.ai-host {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.ai-host > .ai-panel {
+  flex: 1;
 }
 
 .cm-host {
@@ -188,24 +234,38 @@ textarea {
   height: 100%;
 }
 
-/* ---------- Emulator ---------- */
+/* ---------- Emulator (the "Monitor") ---------- */
 .emulator-pane {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 14px;
   background: var(--bg-panel);
   overflow: auto;
 }
 
-.emulator-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 12px;
-  color: var(--text-dim);
+.screen-shell {
+  position: relative;
+  border: 14px solid #111;
+  border-radius: 10px;
+  line-height: 0;
+  max-width: 100%;
+}
+
+.screen-shell.focused {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.screen-shell.crt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 14%) 2px 4px),
+    radial-gradient(ellipse at center, transparent 62%, rgb(0 0 0 / 22%) 100%);
 }
 
 .emulator-screen {
@@ -214,13 +274,13 @@ textarea {
   max-width: 100%;
   image-rendering: pixelated;
   background: #fff;
-  border: 14px solid #111;
-  border-radius: 10px;
   outline: none;
+  display: block;
 }
 
-.emulator-screen.focused {
-  box-shadow: 0 0 0 2px var(--accent);
+.emulator-state {
+  font-size: 12px;
+  color: var(--text-dim);
 }
 
 .emulator-state.running {
@@ -434,4 +494,156 @@ code {
   background: var(--bg-raised);
   padding: 1px 5px;
   border-radius: 4px;
+}
+
+/* ---------- Settings form ---------- */
+.settings-form h3 {
+  margin: 12px 0 4px;
+  font-size: 14px;
+}
+
+.settings-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
+.settings-form label.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-form p {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.settings-saved {
+  color: var(--ok);
+  font-size: 13px;
+  align-self: center;
+}
+
+/* ---------- Mobile (portrait) tabbed layout ---------- */
+.tab-bar {
+  display: none;
+}
+
+.fab-run {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .toolbar .desktop-only,
+  .toolbar .icon-btn {
+    display: none;
+  }
+
+  .toolbar {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .workspace.mobile {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .workspace.mobile > .divider {
+    display: none;
+  }
+
+  .workspace.mobile > .editor-pane,
+  .workspace.mobile > .monitor-pane,
+  .workspace.mobile > .settings-pane,
+  .workspace.mobile > .ai-host {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .tab-hidden {
+    display: none !important;
+  }
+
+  .settings-pane {
+    overflow-y: auto;
+    padding: 12px 16px;
+    background: var(--bg-panel);
+  }
+
+  .program-stats {
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+  }
+
+  .program-stats h3 {
+    margin: 12px 0 4px;
+    font-size: 14px;
+  }
+
+  .program-stats p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .tab-bar {
+    display: flex;
+    border-top: 1px solid var(--border);
+    background: var(--bg-panel);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .tab-bar button {
+    flex: 1;
+    padding: 12px 0;
+    border: none;
+    border-top: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    font-size: 13px;
+  }
+
+  .tab-bar button.active {
+    color: var(--accent);
+    border-top-color: var(--accent);
+  }
+
+  .fab-run {
+    display: block;
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--ok);
+    border-color: var(--ok);
+    color: #08210e;
+    font-size: 22px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 45%);
+    z-index: 20;
+  }
+
+  .emulator-pane {
+    padding: 8px;
+  }
+
+  .screen-shell {
+    border-width: 8px;
+  }
+
+  .emulator-screen {
+    width: auto;
+    height: auto;
+    max-width: none;
+  }
+
+  .status-bar {
+    display: none;
+  }
 }

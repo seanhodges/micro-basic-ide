@@ -1,23 +1,13 @@
-import { useEffect, useState } from 'react';
 import { useIdeStore } from '../app/store';
+import { useProgramStats } from '../app/useProgramStats';
 
 export function StatusBar() {
   const dialect = useIdeStore((s) => s.dialect);
   const fileName = useIdeStore((s) => s.fileName);
   const dirty = useIdeStore((s) => s.dirty);
-  const source = useIdeStore((s) => s.source);
   const emulatorStatus = useIdeStore((s) => s.emulatorStatus);
 
-  const [stats, setStats] = useState({ bytes: 0, errors: 0 });
-
-  // Debounced tokenizer dry-run for the byte counter / error count
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const result = dialect.tokenize(source);
-      setStats({ bytes: result.byteSize, errors: result.errors.length });
-    }, 300);
-    return () => clearTimeout(t);
-  }, [dialect, source]);
+  const stats = useProgramStats();
 
   const ramBudget = 16 * 1024 - 4 * 1024; // rough usable space in 16K
   const pct = Math.min(100, Math.round((stats.bytes / ramBudget) * 100));

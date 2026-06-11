@@ -12,6 +12,9 @@ export function Toolbar() {
   const replaceDocument = useIdeStore((s) => s.replaceDocument);
   const markSaved = useIdeStore((s) => s.markSaved);
   const requestRun = useIdeStore((s) => s.requestRun);
+  const requestStop = useIdeStore((s) => s.requestStop);
+  const requestReset = useIdeStore((s) => s.requestReset);
+  const emulatorStatus = useIdeStore((s) => s.emulatorStatus);
   const toggleAiPanel = useIdeStore((s) => s.toggleAiPanel);
   const aiPanelOpen = useIdeStore((s) => s.aiPanelOpen);
   const setTransferOpen = useIdeStore((s) => s.setTransferOpen);
@@ -63,10 +66,11 @@ export function Toolbar() {
       replaceDocument(text, name);
     })();
 
+  const openShare = guard(() => setTransferOpen(true));
+
   return (
     <div className="toolbar">
       <div className="toolbar-left">
-        <span className="app-title">Micro BASIC IDE</span>
         <div className="menu" ref={menuRef}>
           <button onClick={() => setFileMenuOpen((o) => !o)}>File ▾</button>
           {fileMenuOpen && (
@@ -75,6 +79,14 @@ export function Toolbar() {
               <button onClick={openFile}>Open .bas…</button>
               <button onClick={importP}>Import .P…</button>
               <button onClick={saveFile}>Save .bas</button>
+              <button onClick={openShare}>Share / Export…</button>
+              <div className="menu-separator" />
+              <button
+                onClick={guard(requestRenumber)}
+                title="Renumber the current line and update GOTO/GOSUB references (Ctrl/Cmd+Alt+R)"
+              >
+                # Renumber line
+              </button>
               <div className="menu-separator" />
               <div className="menu-label">Samples</div>
               {sampleFiles.map((s) => (
@@ -85,6 +97,25 @@ export function Toolbar() {
             </div>
           )}
         </div>
+        <button className="desktop-only" onClick={newFile} title="New program">
+          New
+        </button>
+        <button className="desktop-only" onClick={openFile} title="Open a .bas file">
+          Load
+        </button>
+        <button className="desktop-only" onClick={saveFile} title="Save as .bas">
+          Save
+        </button>
+        <button
+          className="desktop-only"
+          onClick={openShare}
+          title="Export or send to real hardware"
+        >
+          Share
+        </button>
+      </div>
+
+      <div className="toolbar-center">
         <select
           className="dialect-select"
           value={dialect.id}
@@ -101,31 +132,33 @@ export function Toolbar() {
         </select>
       </div>
 
-      <div className="toolbar-center">
-        <button className="primary" onClick={requestRun} title="Build and run in the emulator (Ctrl+Enter)">
-          ▶ Run
-        </button>
-        <button onClick={() => setTransferOpen(true)} title="Export or send to real hardware">
-          ⇥ Hardware
-        </button>
-        <button
-          onClick={requestRenumber}
-          title="Renumber the current line and update GOTO/GOSUB references (Ctrl/Cmd+Alt+R)"
-        >
-          # Renumber line
-        </button>
-      </div>
-
       <div className="toolbar-right">
         {error && <span className="toolbar-error">{error}</span>}
         <button
-          className={aiPanelOpen ? 'active' : ''}
+          className="run"
+          onClick={requestRun}
+          title="Build and run in the emulator (Ctrl+Enter)"
+        >
+          ▶ Run
+        </button>
+        <button
+          onClick={requestStop}
+          disabled={emulatorStatus === 'stopped'}
+          title="Stop / break the running program"
+        >
+          ■ Stop
+        </button>
+        <button onClick={requestReset} title="Reset the machine">
+          ↺ Reset
+        </button>
+        <button
+          className={`icon-btn ${aiPanelOpen ? 'active' : ''}`}
           onClick={toggleAiPanel}
           title="AI code generation"
         >
-          ✦ AI
+          ✦
         </button>
-        <button onClick={() => setSettingsOpen(true)} title="Settings">
+        <button className="icon-btn" onClick={() => setSettingsOpen(true)} title="Settings">
           ⚙
         </button>
       </div>

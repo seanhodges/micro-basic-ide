@@ -5,11 +5,17 @@ import {
   loadAutosave,
   getAutoLineNumbering,
   getLineNumberIncrement,
+  getCrtEffect,
+  getSplitRatio,
+  getEmulatorSpeed,
   setAutoLineNumbering as persistAutoLineNumbering,
   setLineNumberIncrement as persistLineNumberIncrement,
+  setCrtEffect as persistCrtEffect,
+  setEmulatorSpeed as persistEmulatorSpeed,
 } from '../storage/settings';
 
 export type EmulatorStatus = 'stopped' | 'running';
+export type MobileTab = 'editor' | 'preview' | 'settings' | 'ai';
 
 interface IdeState {
   dialect: Dialect;
@@ -22,6 +28,18 @@ interface IdeState {
   emulatorStatus: EmulatorStatus;
   /** Bumped to ask the emulator pane to (re)load + run the current source. */
   runRequest: number;
+  /** Bumped to ask the emulator pane to stop. */
+  stopRequest: number;
+  /** Bumped to ask the emulator pane to reset the machine. */
+  resetRequest: number;
+  /** Emulation speed multiplier (1, 2 or 8). */
+  emulatorSpeed: number;
+  /** CRT scanline overlay on the monitor. */
+  crtEffect: boolean;
+  /** Active tab in the mobile (portrait) layout. */
+  mobileTab: MobileTab;
+  /** Editor/monitor split position on desktop (fraction of workspace width). */
+  splitRatio: number;
   aiPanelOpen: boolean;
   transferOpen: boolean;
   settingsOpen: boolean;
@@ -36,6 +54,12 @@ interface IdeState {
   replaceDocument(text: string, fileName?: string): void;
   markSaved(fileName: string): void;
   requestRun(): void;
+  requestStop(): void;
+  requestReset(): void;
+  setEmulatorSpeed(n: number): void;
+  setCrtEffect(on: boolean): void;
+  setMobileTab(tab: MobileTab): void;
+  setSplitRatio(n: number): void;
   setEmulatorStatus(status: EmulatorStatus): void;
   toggleAiPanel(): void;
   setTransferOpen(open: boolean): void;
@@ -55,6 +79,12 @@ export const useIdeStore = create<IdeState>((set) => ({
   dirty: false,
   emulatorStatus: 'stopped',
   runRequest: 0,
+  stopRequest: 0,
+  resetRequest: 0,
+  emulatorSpeed: typeof localStorage !== 'undefined' ? getEmulatorSpeed() : 1,
+  crtEffect: typeof localStorage !== 'undefined' ? getCrtEffect() : true,
+  mobileTab: 'editor',
+  splitRatio: typeof localStorage !== 'undefined' ? getSplitRatio() : 0.5,
   aiPanelOpen: false,
   transferOpen: false,
   settingsOpen: false,
@@ -72,6 +102,18 @@ export const useIdeStore = create<IdeState>((set) => ({
     })),
   markSaved: (fileName) => set({ fileName, dirty: false }),
   requestRun: () => set((s) => ({ runRequest: s.runRequest + 1 })),
+  requestStop: () => set((s) => ({ stopRequest: s.stopRequest + 1 })),
+  requestReset: () => set((s) => ({ resetRequest: s.resetRequest + 1 })),
+  setEmulatorSpeed: (n) => {
+    persistEmulatorSpeed(n);
+    set({ emulatorSpeed: n });
+  },
+  setCrtEffect: (on) => {
+    persistCrtEffect(on);
+    set({ crtEffect: on });
+  },
+  setMobileTab: (tab) => set({ mobileTab: tab }),
+  setSplitRatio: (n) => set({ splitRatio: n }),
   setEmulatorStatus: (status) => set({ emulatorStatus: status }),
   toggleAiPanel: () => set((s) => ({ aiPanelOpen: !s.aiPanelOpen })),
   setTransferOpen: (open) => set({ transferOpen: open }),
