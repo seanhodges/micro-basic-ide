@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import { getDialect } from '../dialects/registry';
 import type { Dialect } from '../dialects/types';
-import { loadAutosave } from '../storage/settings';
+import {
+  loadAutosave,
+  getAutoLineNumbering,
+  getLineNumberIncrement,
+  setAutoLineNumbering as persistAutoLineNumbering,
+  setLineNumberIncrement as persistLineNumberIncrement,
+} from '../storage/settings';
 
 export type EmulatorStatus = 'stopped' | 'running';
 
@@ -19,6 +25,12 @@ interface IdeState {
   aiPanelOpen: boolean;
   transferOpen: boolean;
   settingsOpen: boolean;
+  /** Automatic line-number prefixing on Enter. */
+  autoLineNumbering: boolean;
+  /** Step between auto-generated line numbers. */
+  lineNumberIncrement: number;
+  /** Bumped to ask the editor to renumber the current line. */
+  renumberRequest: number;
 
   setSource(text: string): void;
   replaceDocument(text: string, fileName?: string): void;
@@ -28,6 +40,9 @@ interface IdeState {
   toggleAiPanel(): void;
   setTransferOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
+  setAutoLineNumbering(on: boolean): void;
+  setLineNumberIncrement(n: number): void;
+  requestRenumber(): void;
 }
 
 const autosaved = typeof localStorage !== 'undefined' ? loadAutosave() : null;
@@ -43,6 +58,9 @@ export const useIdeStore = create<IdeState>((set) => ({
   aiPanelOpen: false,
   transferOpen: false,
   settingsOpen: false,
+  autoLineNumbering: typeof localStorage !== 'undefined' ? getAutoLineNumbering() : true,
+  lineNumberIncrement: typeof localStorage !== 'undefined' ? getLineNumberIncrement() : 10,
+  renumberRequest: 0,
 
   setSource: (text) => set({ source: text, dirty: true }),
   replaceDocument: (text, fileName) =>
@@ -58,4 +76,13 @@ export const useIdeStore = create<IdeState>((set) => ({
   toggleAiPanel: () => set((s) => ({ aiPanelOpen: !s.aiPanelOpen })),
   setTransferOpen: (open) => set({ transferOpen: open }),
   setSettingsOpen: (open) => set({ settingsOpen: open }),
+  setAutoLineNumbering: (on) => {
+    persistAutoLineNumbering(on);
+    set({ autoLineNumbering: on });
+  },
+  setLineNumberIncrement: (n) => {
+    persistLineNumberIncrement(n);
+    set({ lineNumberIncrement: n });
+  },
+  requestRenumber: () => set((s) => ({ renumberRequest: s.renumberRequest + 1 })),
 }));

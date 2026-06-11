@@ -16,6 +16,7 @@ export function Toolbar() {
   const aiPanelOpen = useIdeStore((s) => s.aiPanelOpen);
   const setTransferOpen = useIdeStore((s) => s.setTransferOpen);
   const setSettingsOpen = useIdeStore((s) => s.setSettingsOpen);
+  const requestRenumber = useIdeStore((s) => s.requestRenumber);
 
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
   const [error, setError] = useState('');
@@ -106,6 +107,12 @@ export function Toolbar() {
         </button>
         <button onClick={() => setTransferOpen(true)} title="Export or send to real hardware">
           ⇥ Hardware
+        </button>
+        <button
+          onClick={requestRenumber}
+          title="Renumber the current line and update GOTO/GOSUB references (Ctrl/Cmd+Alt+R)"
+        >
+          # Renumber line
         </button>
       </div>
 
