@@ -1,7 +1,9 @@
-import type { Dialect, TokenizeError, TokenizeResult } from '../types';
-import { CharsetError } from '../types';
+import type { Dialect, TokenizeResult } from '../types';
 import { bbcCharset } from './charset';
 import { bbcKeywords } from './keywords';
+import { tokenizeProgram } from './tokenizer';
+import { detokenizeProgram } from './detokenizer';
+import { bbcBuildTargets } from './targets';
 import { bbcLanguageSupport, bbcCompletionSource } from './language';
 import { bbcAiProfile } from './aiProfile';
 import { bbcKeyboardLayout } from './keyboardLayout';
@@ -12,34 +14,19 @@ import {
   BBC_DISPLAY_HEIGHT,
 } from '../../emulator/bbc/bbcMachine';
 
-/** Map a CharsetError's string index to a 1-based line / 0-based column. */
-function charsetErrors(source: string): TokenizeError[] {
-  try {
-    bbcCharset.toMachine(source);
-    return [];
-  } catch (e) {
-    if (!(e instanceof CharsetError)) throw e;
-    const before = source.slice(0, e.index);
-    const line = before.split('\n').length;
-    const column = e.index - (before.lastIndexOf('\n') + 1);
-    return [{ line, column, message: e.message }];
-  }
-}
-
 /**
- * BBC Micro preview dialect.
+ * BBC Micro Model B dialect.
  *
- * Unlike the Sinclair dialects there is no TypeScript tokenizer (yet): the
- * "image" is the program source in the machine charset, and the emulator
- * tokenizes it with the genuine BASIC ROM routine before poking it at PAGE
- * (see src/emulator/bbc/bbcMachine.ts). Consequences, until a native
- * tokenizer lands: byteSize approximates the tokenized size with the source
- * length, lint only reports charset problems (the ROM reports real syntax
- * errors on screen at RUN), and buildTargets/audio are absent.
+ * BBC BASIC is tokenized natively in TypeScript (see tokenizer.ts) into the
+ * genuine BASIC II byte layout — the same bytes the BASIC ROM keeps from PAGE
+ * and that SAVE writes to disc. That tokenized program is the dialect's
+ * "image": the emulator pokes it straight in at PAGE, and it is also the
+ * import/export file format (.bbc). Hardware emulation is delegated to jsbeeb
+ * (see src/emulator/bbc/bbcMachine.ts).
  */
 export const bbcmicro: Dialect = {
   id: 'bbcmicro',
-  name: 'BBC BASIC (preview)',
+  name: 'BBC BASIC',
   fileExtensions: ['.bas'],
   keywords: bbcKeywords,
   charset: bbcCharset,
@@ -47,20 +34,19 @@ export const bbcmicro: Dialect = {
   completionSource: bbcCompletionSource,
 
   tokenize(source: string): TokenizeResult {
-    const errors = charsetErrors(source);
+    const { bytes, errors } = tokenizeProgram(source);
+    // A non-empty image is the program plus its 0x0D 0xFF end marker.
     const image =
-      errors.length === 0 && source.trim().length > 0
-        ? bbcCharset.toMachine(source)
-        : new Uint8Array(0);
-    return { programBytes: image, image, errors, byteSize: image.length };
+      errors.length === 0 && bytes.length > 2 ? bytes : new Uint8Array(0);
+    return { programBytes: bytes, image, errors, byteSize: bytes.length };
   },
 
   detokenize(image: Uint8Array): string {
-    return bbcCharset.toUnicode(image);
+    return detokenizeProgram(image);
   },
 
   lint(source: string) {
-    return charsetErrors(source);
+    return tokenizeProgram(source).errors;
   },
 
   // Prefetched by the app for cache warming; the jsbeeb adapter loads the
@@ -78,7 +64,9 @@ export const bbcmicro: Dialect = {
 
   samples: bbcSamples,
 
-  buildTargets: [],
+  buildTargets: bbcBuildTargets,
+
+  binaryImport: { extension: '.bbc', label: 'Import .BBC…' },
 
   aiProfile: bbcAiProfile,
 };

@@ -50,8 +50,8 @@ export async function openBinaryFile(
       const [handle] = await w.showOpenFilePicker({
         types: [
           {
-            description: 'ZX81 program',
-            accept: { 'application/octet-stream': ['.p'] },
+            description: 'Program image',
+            accept: { 'application/octet-stream': [accept] },
           },
         ],
       });

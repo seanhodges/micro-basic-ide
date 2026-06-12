@@ -139,7 +139,14 @@ export function TransferDialog() {
         <div className="transfer-group">
           <h3>Files &amp; serial</h3>
           <div className="modal-actions left">
-            <button onClick={runFileTarget('p-file')}>Download .P file</button>
+            {dialect.buildTargets
+              // wav is offered through the cassette section above
+              .filter((t) => !(dialect.audio && t.fileExtension === 'wav'))
+              .map((t) => (
+                <button key={t.id} onClick={runFileTarget(t.id)}>
+                  {t.label}
+                </button>
+              ))}
             <button
               onClick={sendSerial}
               disabled={!webSerialSupported()}

@@ -53,6 +53,8 @@ export const zx81: Dialect = {
 
   buildTargets: zx81BuildTargets,
 
+  binaryImport: { extension: '.p', label: 'Import .P…' },
+
   audio: {
     sampleRate: CASSETTE_SAMPLE_RATE,
     buildSamples: (source, programName, robust) =>

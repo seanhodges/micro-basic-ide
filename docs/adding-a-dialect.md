@@ -42,10 +42,12 @@ in `src/emulator/bbc/`. That pattern looks like:
   the surface used (jsbeeb ships no types);
 - ROM assets copied into `public/roms/` in the layout the package's loader
   expects, with attribution;
-- `tokenize()` may delegate to the emulated machine itself — the BBC dialect
-  passes source text through and lets the genuine BASIC ROM tokenize it at
-  load time (so `byteSize` is approximate and `lint` covers charset only,
-  until a native tokenizer lands).
+- a native tokenizer is still preferred over delegating to the emulated ROM:
+  the BBC dialect tokenizes in TypeScript (`src/dialects/bbcmicro/tokenizer.ts`)
+  to the genuine BASIC II byte layout, so the emulator just pokes the `image`
+  in at PAGE — the same image used for `.bbc` import/export. Its output is
+  regression-tested byte-for-byte against jsbeeb's ROM tokeniser
+  (`tokenizer.test.ts`), which is how the keyword flags were pinned down.
 
 Mind the license: jsbeeb is GPL-3.0-or-later, which is why this project is
 GPL — see the License section in the README before adding a dependency under
@@ -53,8 +55,8 @@ a different license.
 
 ### BBC Micro follow-up checklist
 
-The current BBC target is a preview. Still to do: a native TypeScript
-tokenizer/detokenizer + linter (real `byteSize`, syntax errors in the
-editor), full keyword table, authentic keyboard layout styling/theme, sound
-(real jsbeeb SoundChip + WebAudio), and build targets (`.ssd` disc / UEF
-cassette export).
+Done: native tokenizer/detokenizer + linter (real `byteSize`, syntax errors
+in the editor), full keyword table, and `.bbc` tokenized-program import/export.
+Still to do: authentic keyboard layout styling/theme, sound (real jsbeeb
+SoundChip + WebAudio), dot-abbreviation expansion in the tokenizer (`P.` →
+`PRINT`), and richer build targets (`.ssd` disc / UEF cassette export).

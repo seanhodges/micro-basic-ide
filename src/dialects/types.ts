@@ -135,6 +135,12 @@ export interface Dialect {
   /** Bundled example programs; the first is the starter shown for a fresh document. */
   samples: SampleFile[];
   buildTargets: BuildTarget[];
+  /**
+   * Binary program format this dialect can import back into editable text via
+   * {@link detokenize} (e.g. the ZX81 `.P`, Spectrum `.TAP`, BBC `.bbc`). Drives
+   * the toolbar's Import menu item; absent when the dialect has no binary form.
+   */
+  binaryImport?: { extension: string; label: string };
   /** Cassette-audio loading support, when the machine loads from tape. */
   audio?: {
     sampleRate: number;
