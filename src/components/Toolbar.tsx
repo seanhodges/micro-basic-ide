@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIdeStore } from '../app/store';
+import { isMobileViewport } from '../app/useMediaQuery';
 import { openTextFile, openBinaryFile, saveTextFile } from '../storage/files';
 import { dialects } from '../dialects/registry';
 
@@ -20,10 +21,35 @@ export function Toolbar() {
   const setTransferOpen = useIdeStore((s) => s.setTransferOpen);
   const setSettingsOpen = useIdeStore((s) => s.setSettingsOpen);
   const requestRenumber = useIdeStore((s) => s.requestRenumber);
+  const setMobileTab = useIdeStore((s) => s.setMobileTab);
+  const virtualKeyboard = useIdeStore((s) => s.virtualKeyboard);
+  const setVirtualKeyboard = useIdeStore((s) => s.setVirtualKeyboard);
 
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
   const [error, setError] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // The file menu and the on-screen keyboard are mutually exclusive: opening the
+  // keyboard (its toggle lives in the emulator pane) closes the menu.
+  useEffect(() => {
+    if (virtualKeyboard) setFileMenuOpen(false);
+  }, [virtualKeyboard]);
+
+  // Opening the file menu hides the keyboard; on mobile, run/stop/reset jump to
+  // the preview tab so the user sees the emulator they just acted on.
+  const toggleFileMenu = () => {
+    const next = !fileMenuOpen;
+    setFileMenuOpen(next);
+    if (next) setVirtualKeyboard(false);
+  };
+  const stopProgram = () => {
+    requestStop();
+    if (isMobileViewport()) setMobileTab('preview');
+  };
+  const resetProgram = () => {
+    requestReset();
+    if (isMobileViewport()) setMobileTab('preview');
+  };
 
   const guard = (fn: () => Promise<void> | void) => () => {
     setFileMenuOpen(false);
@@ -74,7 +100,7 @@ export function Toolbar() {
     <div className="toolbar">
       <div className="toolbar-left">
         <div className="menu" ref={menuRef}>
-          <button onClick={() => setFileMenuOpen((o) => !o)}>File ▾</button>
+          <button onClick={toggleFileMenu}>File ▾</button>
           {fileMenuOpen && (
             <div
               className="menu-items"
@@ -157,13 +183,13 @@ export function Toolbar() {
           ▶ Run
         </button>
         <button
-          onClick={requestStop}
+          onClick={stopProgram}
           disabled={emulatorStatus === 'stopped'}
           title="Stop / break the running program"
         >
           ■ Stop
         </button>
-        <button onClick={requestReset} title="Reset the machine">
+        <button onClick={resetProgram} title="Reset the machine">
           ↺ Reset
         </button>
         <button
