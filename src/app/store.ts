@@ -111,11 +111,25 @@ function defaultVirtualKeyboard(): boolean {
   );
 }
 
+/**
+ * True when the document is "untouched" — blank, or exactly one dialect's
+ * starter program. Only such a document is swapped for the new starter when
+ * the target machine changes; anything the user wrote or loaded is left alone.
+ */
+function isStarterOrEmpty(source: string): boolean {
+  return (
+    source.trim() === '' || dialects.some((d) => d.samples[0]?.text === source)
+  );
+}
+
+const startupDialect = initialDialect();
+const startupText = autosaved?.text ?? startupDialect.samples[0]?.text ?? '';
+
 export const useIdeStore = create<IdeState>((set) => ({
-  dialect: initialDialect(),
+  dialect: startupDialect,
   fileName: autosaved?.name ?? 'untitled.bas',
-  source: autosaved?.text ?? '',
-  docOverride: { text: autosaved?.text ?? '', seq: 0 },
+  source: startupText,
+  docOverride: { text: startupText, seq: 0 },
   dirty: false,
   emulatorStatus: 'stopped',
   runRequest: 0,
@@ -147,9 +161,23 @@ export const useIdeStore = create<IdeState>((set) => ({
     set((s) => {
       if (id === s.dialect.id) return {};
       persistDialectId(id);
-      // The emulator pane tears down the old machine when `dialect` changes;
-      // mark it stopped so the UI reflects the switch immediately.
-      return { dialect: getDialect(id), emulatorStatus: 'stopped' };
+      const next = getDialect(id);
+      // Swap in the new machine's starter only when the document is untouched;
+      // never clobber the user's own code. Either way refresh docOverride so the
+      // editor (rebuilt on dialect change) shows the right text, not stale
+      // content.
+      const swap = isStarterOrEmpty(s.source);
+      const text = swap ? (next.samples[0]?.text ?? '') : s.source;
+      return {
+        dialect: next,
+        source: text,
+        docOverride: { text, seq: s.docOverride.seq + 1 },
+        dirty: swap ? false : s.dirty,
+        fileName: swap ? 'untitled.bas' : s.fileName,
+        // The emulator pane tears down the old machine when `dialect` changes;
+        // mark it stopped so the UI reflects the switch immediately.
+        emulatorStatus: 'stopped',
+      };
     }),
   setSource: (text) => set({ source: text, dirty: true }),
   replaceDocument: (text, fileName) =>

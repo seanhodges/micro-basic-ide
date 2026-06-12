@@ -103,10 +103,16 @@ satisfies and the zx81 file to mirror.
    cassette `audio` ({ `sampleRate`, `buildSamples`, `loadInstructions` }). See
    `docs/file-formats.md` and `docs/serial-protocol.md`. Mirror `zx81/targets.ts`.
 
-10. **`index.ts`** — assemble and export the `Dialect` object from all the pieces
+10. **`samples.ts`** — a `SampleFile[]` (`name`, `title`, `text`) of example
+    programs **in this dialect's own BASIC**. The **first entry is the starter**
+    shown for a fresh document and swapped in when the user selects this machine.
+    Mirror `zxspectrum/samples.ts` (raw `.bas` files under `samples/`). Don't
+    point a new dialect at the zx81 `src/samples/` programs — they won't run.
+
+11. **`index.ts`** — assemble and export the `Dialect` object from all the pieces
     above. Mirror `zx81/index.ts` exactly (it shows how `tokenize`, `detokenize`,
-    `lint`, `romUrl`, `createEmulator`, `keyboardLayout`, `buildTargets`, `audio`,
-    and `aiProfile` are stitched together).
+    `lint`, `romUrl`, `createEmulator`, `keyboardLayout`, `samples`,
+    `buildTargets`, `audio`, and `aiProfile` are stitched together).
 
 ## Wire it up
 
@@ -130,6 +136,13 @@ is registered it is immediately selectable and runnable — **do not re-wire the
 picker per dialect.** If you find the dropdown still shows only one machine,
 check the registry, not the UI. Keep new UI text dialect-driven (e.g.
 `dialect.name`), never a hard-coded machine name.
+
+- **Samples are per-dialect.** The Toolbar's Samples menu lists
+  `dialect.samples`, and switching machines swaps the editor to the new
+  dialect's starter (`samples[0]`) **only when the document is untouched** —
+  blank or exactly some dialect's starter (`store.isStarterOrEmpty`). Code the
+  user wrote or loaded is never replaced. So just provide good `samples`; the
+  swap is generic.
 
 ## Conventions (from CLAUDE.md)
 
@@ -168,17 +181,17 @@ npm run dev      # optional: drive the new emulator + keyboard in the browser
 
 ## Key files to study
 
-| File | What it shows |
-|------|---------------|
-| `src/dialects/types.ts` | Every interface you must implement |
-| `src/dialects/zx81/index.ts` | How a `Dialect` is assembled |
-| `src/dialects/registry.ts` | Where to register the new dialect |
-| `src/dialects/zx81/emulator/` | `MachineEmulator` over the shared Z80 core |
-| `src/emulator/z80/` | Vendored, machine-independent CPU core — **do not edit** |
-| `src/keyboard/layoutSchema.ts` | All keyboard-layout type definitions |
-| `src/dialects/zx81/keyboardLayout.ts` | Full layered keyboard example |
-| `src/dialects/zx81/emulator/keyboard.ts` | Matrix + dual press-source pattern |
-| `src/keyboard/inputEngine.ts` / `VirtualKeyboard.tsx` | Generic kbd — no changes needed |
+| File                                                  | What it shows                                            |
+| ----------------------------------------------------- | -------------------------------------------------------- |
+| `src/dialects/types.ts`                               | Every interface you must implement                       |
+| `src/dialects/zx81/index.ts`                          | How a `Dialect` is assembled                             |
+| `src/dialects/registry.ts`                            | Where to register the new dialect                        |
+| `src/dialects/zx81/emulator/`                         | `MachineEmulator` over the shared Z80 core               |
+| `src/emulator/z80/`                                   | Vendored, machine-independent CPU core — **do not edit** |
+| `src/keyboard/layoutSchema.ts`                        | All keyboard-layout type definitions                     |
+| `src/dialects/zx81/keyboardLayout.ts`                 | Full layered keyboard example                            |
+| `src/dialects/zx81/emulator/keyboard.ts`              | Matrix + dual press-source pattern                       |
+| `src/keyboard/inputEngine.ts` / `VirtualKeyboard.tsx` | Generic kbd — no changes needed                          |
 
 ## Guardrails
 

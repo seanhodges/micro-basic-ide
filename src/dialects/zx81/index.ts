@@ -13,6 +13,7 @@ import {
 } from './targets';
 import { Zx81Machine } from './emulator/zx81Machine';
 import { zx81KeyboardLayout } from './keyboardLayout';
+import { sampleFiles } from '../../samples';
 
 export const zx81: Dialect = {
   id: 'zx81',
@@ -47,6 +48,8 @@ export const zx81: Dialect = {
   },
 
   keyboardLayout: zx81KeyboardLayout,
+
+  samples: sampleFiles,
 
   buildTargets: zx81BuildTargets,
 

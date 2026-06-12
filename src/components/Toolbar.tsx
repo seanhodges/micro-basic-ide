@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { useIdeStore } from '../app/store';
 import { openTextFile, openBinaryFile, saveTextFile } from '../storage/files';
 import { dialects } from '../dialects/registry';
-import { sampleFiles } from '../samples';
 
 export function Toolbar() {
   const dialect = useIdeStore((s) => s.dialect);
@@ -93,7 +92,7 @@ export function Toolbar() {
               </button>
               <div className="menu-separator" />
               <div className="menu-label">Samples</div>
-              {sampleFiles.map((s) => (
+              {dialect.samples.map((s) => (
                 <button key={s.name} onClick={() => loadSample(s.name, s.text)}>
                   {s.title}
                 </button>

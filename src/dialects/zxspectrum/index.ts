@@ -9,6 +9,7 @@ import { spectrumAiProfile } from './aiProfile';
 import { spectrumBuildTargets } from './targets';
 import { SpectrumMachine } from './emulator/spectrumMachine';
 import { spectrumKeyboardLayout } from './keyboardLayout';
+import { spectrumSamples } from './samples';
 
 export const zxspectrum: Dialect = {
   id: 'zxspectrum',
@@ -43,6 +44,8 @@ export const zxspectrum: Dialect = {
   },
 
   keyboardLayout: spectrumKeyboardLayout,
+
+  samples: spectrumSamples,
 
   buildTargets: spectrumBuildTargets,
 
