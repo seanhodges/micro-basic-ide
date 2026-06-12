@@ -17,6 +17,9 @@ interface VirtualKeyboardProps {
 /** Pointer id used for activation via the physical keyboard (a11y path). */
 const KEYBOARD_POINTER_ID = -1;
 
+/** Below this container width there isn't room for every legend at once. */
+const COMPACT_MAX_WIDTH = 520;
+
 function GlyphSvg({ glyph }: { glyph?: { viewBox: string; paths: { d: string; fill?: string }[] } }) {
   if (!glyph) return null;
   // Constrained path data only — never raw SVG markup (XSS surface for
@@ -75,6 +78,34 @@ export function VirtualKeyboard({
   useEffect(() => {
     if (!enabled) engine.cancelAll();
   }, [enabled, engine]);
+
+  // Compact mode: too narrow to render every legend without overlap, so
+  // show the base layer plus one selectable secondary layer per key.
+  const [compact, setCompact] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 600,
+  );
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() =>
+      setCompact(el.clientWidth < COMPACT_MAX_WIDTH),
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const baseLayer = useMemo(
+    () => layout.layers.find((l) => l.activeWhen.length === 0) ?? layout.layers[0]!,
+    [layout],
+  );
+  const secondaryLayers = useMemo(
+    () => layout.layers.filter((l) => l !== baseLayer),
+    [layout, baseLayer],
+  );
+  const [legendChoice, setLegendChoice] = useState<string | null>(null);
+  useEffect(() => setLegendChoice(null), [layout]);
+  const legendLayerId =
+    legendChoice ?? layout.options?.compactDefaultLayer ?? secondaryLayers[0]?.id;
 
   // Any path that can lose pointers clears all matrix state (R5).
   useEffect(() => {
@@ -191,11 +222,14 @@ export function VirtualKeyboard({
   const pressed = engine.getPressedKeyIds();
   const activeLayer = engine.getActiveLayer();
   const focusKeyId = flatKeys[focusIdx]?.id;
+  // An engaged modifier temporarily shows its own legends in compact mode.
+  const visibleSecondaryId =
+    activeLayer.id !== baseLayer.id ? activeLayer.id : legendLayerId;
 
   return (
     <div
       ref={containerRef}
-      className={`virtual-keyboard ${layout.theme}${enabled ? '' : ' vk-disabled'}`}
+      className={`virtual-keyboard ${layout.theme}${enabled ? '' : ' vk-disabled'}${compact ? ' vk-compact' : ''}`}
       role="group"
       aria-label={`${layout.name} on-screen keyboard`}
       tabIndex={0}
@@ -207,6 +241,25 @@ export function VirtualKeyboard({
       onKeyUp={onKeyUp}
       onBlur={() => engine.pointerUp(KEYBOARD_POINTER_ID)}
     >
+      {compact && secondaryLayers.length > 1 && (
+        <div className="vk-legend-bar" role="radiogroup" aria-label="Key legends shown">
+          {secondaryLayers.map((layer) => (
+            <button
+              key={layer.id}
+              className={`vk-legend-btn${layer.id === visibleSecondaryId ? ' active' : ''}`}
+              role="radio"
+              aria-checked={layer.id === visibleSecondaryId}
+              tabIndex={-1}
+              onPointerDown={(e) => {
+                e.preventDefault(); // keep canvas focus (R4)
+                setLegendChoice(layer.id);
+              }}
+            >
+              {layer.name ?? layer.id}
+            </button>
+          ))}
+        </div>
+      )}
       {layout.rows.map((row, rowIdx) => (
         <div
           key={rowIdx}
@@ -238,6 +291,8 @@ export function VirtualKeyboard({
                   {layout.layers.map((layer, layerIdx) => {
                     const label = def.labels[layerIdx];
                     if (!label) return null;
+                    if (compact && layer !== baseLayer && layer.id !== visibleSecondaryId)
+                      return null;
                     const cls = [
                       'vk-label',
                       `vk-pos-${layer.position}`,

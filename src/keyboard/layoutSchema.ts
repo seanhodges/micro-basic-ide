@@ -21,11 +21,19 @@ export interface KeyboardLayout {
   options?: {
     /** Minimum emulated frames a matrix press is held so the ROM scan sees it. */
     minHoldFrames?: number;
+    /**
+     * Layer shown alongside the base layer when the keyboard is too narrow
+     * to render every legend (compact mode). Defaults to the first non-base
+     * layer.
+     */
+    compactDefaultLayer?: string;
   };
 }
 
 export interface LayerDef {
   id: string;
+  /** Display name in the compact-mode legend selector (defaults to id). */
+  name?: string;
   /** Where this layer's label sits on/around the keycap. */
   position: 'center' | 'tl' | 'tr' | 'bl' | 'br' | 'below';
   /** Modifier ids that make this the active layer; [] = base layer. */

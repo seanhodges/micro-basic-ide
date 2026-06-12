@@ -345,6 +345,11 @@ textarea {
   pointer-events: none;
 }
 
+/* Switching the displayed legends is harmless while stopped. */
+.virtual-keyboard.vk-disabled .vk-legend-btn {
+  pointer-events: auto;
+}
+
 .vk-row {
   display: grid;
   gap: 3px;
@@ -489,6 +494,64 @@ textarea {
   white-space: normal;
   text-align: center;
   line-height: 1.2;
+}
+
+/* Compact mode: not enough width for every legend — each key shows the main
+   legend plus one secondary layer picked in the legend bar (or forced by an
+   engaged modifier). With the clutter gone, the survivors get bigger. */
+.vk-legend-bar {
+  display: flex;
+  gap: 4px;
+  padding: 0 2px 5px;
+}
+
+.vk-legend-btn {
+  flex: 1;
+  padding: 5px 2px;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  background: #23232b;
+  border: 1px solid #34343e;
+  border-radius: 4px;
+  color: #9aa0ad;
+}
+
+.vk-legend-btn.active {
+  color: #ececec;
+  border-color: var(--accent);
+}
+
+/* Only one secondary legend is visible at a time in compact mode, so all
+   on-key positions collapse into a single clean bottom-centre slot, with the
+   main legend centred above it. */
+.vk-compact .vk-key:not(.vk-style-shift):not(.vk-style-small-main):not(.vk-style-extra) .vk-pos-center {
+  top: 6px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+/* Slot coordinates are relative to the keycap (the labels' positioned
+   ancestor), not the full key box. */
+.vk-compact .vk-pos-tr,
+.vk-compact .vk-pos-bl,
+.vk-compact .vk-pos-br {
+  inset: auto 1px 2px;
+  max-width: none;
+  overflow: hidden;
+  text-align: center;
+  font-size: 8px;
+}
+
+.vk-compact .vk-pos-below {
+  font-size: 8px;
+}
+
+.vk-compact .vk-pos-br svg {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
 }
 
 /* Convenience extras row: shorter, lighter keys without the function strip. */

@@ -208,13 +208,13 @@ export const zx81KeyboardLayout: KeyboardLayout = {
   gridColumns: 40,
   layers: [
     { id: 'main', position: 'center', activeWhen: [] },
-    { id: 'shift', position: 'tr', activeWhen: ['shift'] },
-    { id: 'keyword', position: 'bl', activeWhen: [] },
-    { id: 'function', position: 'below', activeWhen: [] },
-    { id: 'graphic', position: 'br', activeWhen: [] },
+    { id: 'shift', name: 'SHIFT', position: 'tr', activeWhen: ['shift'] },
+    { id: 'keyword', name: 'KEYWORD', position: 'bl', activeWhen: [] },
+    { id: 'function', name: 'FUNCTION', position: 'below', activeWhen: [] },
+    { id: 'graphic', name: 'GRAPHICS', position: 'br', activeWhen: [] },
   ],
   modifiers: [{ id: 'shift', emits: ['Shift'], sticky: true, lockable: true }],
   rows,
   glyphs: zx81Glyphs,
-  options: { minHoldFrames: 3 },
+  options: { minHoldFrames: 3, compactDefaultLayer: 'keyword' },
 };
