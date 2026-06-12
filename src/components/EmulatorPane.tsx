@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIdeStore } from '../app/store';
 import { useMediaQuery, MOBILE_QUERY } from '../app/useMediaQuery';
 import {
@@ -199,6 +199,10 @@ export function EmulatorPane() {
   const registerFrameHook = useCallback((cb: (() => void) | null) => {
     frameHookRef.current = cb;
   }, []);
+  const keyboardTarget = useMemo(
+    () => ({ kind: 'machine' as const, getMachine, registerFrameHook }),
+    [getMachine, registerFrameHook],
+  );
 
   const handleKey = (e: React.KeyboardEvent, down: boolean) => {
     if (e.key === 'Escape') {
@@ -261,9 +265,8 @@ export function EmulatorPane() {
         <div className="vk-host" ref={keyboardHostRef}>
           <VirtualKeyboard
             layout={dialect.keyboardLayout}
-            getMachine={getMachine}
+            target={keyboardTarget}
             enabled={emulatorStatus === 'running'}
-            registerFrameHook={registerFrameHook}
             sound={keyboardSound}
             haptics={keyboardHaptics}
           />

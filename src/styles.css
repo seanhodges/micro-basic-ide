@@ -200,6 +200,7 @@ textarea {
   min-width: 0;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -223,9 +224,18 @@ textarea {
   flex: 1;
 }
 
+/* Editor area above the docked keyboard; the run FAB anchors to it. */
+.editor-main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
 .cm-host {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
   background: #fdfdf8;
 }
@@ -303,6 +313,12 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
+  /* Pin the ⌨ toggle to the pane edge: the status text changes length when
+     the canvas gains/loses focus, and a shifting button mid-press would
+     swallow the click. */
+  width: 100%;
+  max-width: 600px;
+  justify-content: space-between;
 }
 
 .vk-toggle {
@@ -320,6 +336,15 @@ textarea {
   width: 100%;
   max-width: 600px;
   flex-shrink: 0;
+}
+
+/* Keyboard docked under the code editor (shown while the editor has focus). */
+.editor-vk-host {
+  width: 100%;
+  max-width: 600px;
+  flex-shrink: 0;
+  align-self: center;
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
 }
 
 .virtual-keyboard {
@@ -531,6 +556,22 @@ textarea {
 .vk-legend-btn.active {
   color: #ececec;
   border-color: var(--accent);
+}
+
+/* Editor-target input modes (the ZX81 K/F/G cursor as a selector bar):
+   slightly larger tap targets than the display-only legend bar. */
+.vk-mode-bar .vk-legend-btn {
+  padding: 7px 2px;
+  font-size: 10px;
+}
+
+/* Keys that do nothing in the current editor mode. */
+.vk-key.vk-noaction .vk-keycap {
+  opacity: 0.45;
+}
+
+.vk-key.vk-noaction .vk-label {
+  opacity: 0.5;
 }
 
 /* Only one secondary legend is visible at a time in compact mode, so all
@@ -958,5 +999,112 @@ code {
     top: 7px;
     left: 5px;
     font-size: 13px;
+  }
+}
+
+/* ---------- Virtual keyboard orientation sizing ---------- */
+
+/* Phone/tablet portrait: the keyboard fills the full width and the keys
+   scale proportionally with it, so they stay easy to press. */
+@media (max-width: 768px) and (orientation: portrait) {
+  .vk-host,
+  .editor-vk-host {
+    max-width: none;
+  }
+
+  .vk-key {
+    height: clamp(42px, 11.5vw, 60px);
+  }
+
+  .vk-key.vk-style-extra {
+    height: clamp(30px, 8vw, 42px);
+  }
+
+  .vk-pos-center {
+    font-size: clamp(12px, 3.4vw, 15px);
+  }
+}
+
+/* Height-constrained landscape (phones): centred with side padding, key
+   heights capped by the viewport so the whole keyboard fits without
+   scrolling and leaves room for the preview / editor text above. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .vk-host,
+  .editor-vk-host {
+    max-width: min(660px, 94vw);
+    margin-inline: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .vk-key {
+    height: clamp(28px, 7vh, 44px);
+  }
+
+  .vk-key.vk-style-extra {
+    height: clamp(22px, 5vh, 32px);
+  }
+
+  /* Shallow keys: tighten gaps/padding and shrink the function strip below
+     the keycap so the whole keyboard stays under ~46vh (compact mode is
+     forced at this height). */
+  .virtual-keyboard {
+    gap: 2px;
+    padding: 4px 6px 2px;
+  }
+
+  .vk-row {
+    gap: 2px;
+  }
+
+  .vk-legend-bar {
+    padding-bottom: 3px;
+  }
+
+  .vk-mode-bar .vk-legend-btn {
+    padding: 5px 2px;
+  }
+
+  .vk-keycap {
+    inset: 0 0 6px;
+  }
+
+  .vk-pos-center {
+    top: 3px;
+    left: 4px;
+    font-size: 11px;
+  }
+
+  .vk-compact
+    .vk-key:not(.vk-style-shift):not(.vk-style-small-main):not(.vk-style-extra)
+    .vk-pos-center {
+    top: 2px;
+  }
+
+  .vk-compact .vk-pos-tr,
+  .vk-compact .vk-pos-bl,
+  .vk-compact .vk-pos-br {
+    inset: auto 1px 1px;
+    font-size: 7px;
+  }
+
+  .vk-compact .vk-pos-br svg {
+    width: 9px;
+    height: 9px;
+  }
+
+  .vk-pos-below {
+    bottom: 0;
+    font-size: 6px;
+  }
+
+  .vk-style-shift .vk-pos-center,
+  .vk-style-small-main .vk-pos-center {
+    inset: 0 0 6px;
+    font-size: 8px;
+  }
+
+  .vk-style-extra .vk-pos-center {
+    font-size: 10px;
   }
 }

@@ -65,10 +65,10 @@ const layout: KeyboardLayout = {
 
 function setup() {
   const machine = new FakeMachine();
-  const engine = new KeyboardInputEngine(
-    layout,
-    () => machine as unknown as MachineEmulator,
-  );
+  const engine = new KeyboardInputEngine(layout, {
+    kind: 'machine',
+    getMachine: () => machine as unknown as MachineEmulator,
+  });
   return { machine, engine };
 }
 
@@ -234,5 +234,61 @@ describe('KeyboardInputEngine', () => {
     engine.cancel(1);
     expect(engine.getModifierState('shift')).toBe('off');
     expect(machine.down.has('Shift')).toBe(false);
+  });
+});
+
+describe('KeyboardInputEngine (editor target)', () => {
+  function editorSetup() {
+    const presses: { keyId: string; layerId: string }[] = [];
+    const engine = new KeyboardInputEngine(layout, {
+      kind: 'editor',
+      onKeyPress: (key, activeLayer) =>
+        presses.push({ keyId: key.id, layerId: activeLayer.id }),
+    });
+    return { presses, engine };
+  }
+
+  it('fires the callback on key-down with the current layer', () => {
+    const { presses, engine } = editorSetup();
+    engine.pointerDown('KeyP', 1);
+    expect(presses).toEqual([{ keyId: 'KeyP', layerId: 'main' }]);
+    engine.pointerUp(1);
+    expect(presses).toHaveLength(1); // down only, never on release
+  });
+
+  it('sticky shift applies to the next press and clears without frames', () => {
+    const { presses, engine } = editorSetup();
+    engine.pointerDown('Shift', 1);
+    engine.pointerUp(1);
+    expect(engine.getModifierState('shift')).toBe('sticky');
+    expect(presses).toHaveLength(0); // modifiers never reach the callback
+    engine.pointerDown('KeyP', 2);
+    expect(presses).toEqual([{ keyId: 'KeyP', layerId: 'shift' }]);
+    engine.pointerUp(2);
+    // No onFrame() ever ran — releases must not depend on emulator frames.
+    expect(engine.getModifierState('shift')).toBe('off');
+    expect(engine.getActiveLayer().id).toBe('main');
+  });
+
+  it('locked shift persists across presses without frames', () => {
+    const { presses, engine } = editorSetup();
+    engine.pointerDown('Shift', 1);
+    engine.pointerUp(1);
+    engine.pointerDown('Shift', 1);
+    engine.pointerUp(1);
+    expect(engine.getModifierState('shift')).toBe('locked');
+    engine.pointerDown('KeyP', 2);
+    engine.pointerUp(2);
+    engine.pointerDown('KeyH', 2);
+    engine.pointerUp(2);
+    expect(presses.map((p) => p.layerId)).toEqual(['shift', 'shift']);
+    expect(engine.getModifierState('shift')).toBe('locked');
+  });
+
+  it('sliding onto a key fires the callback for it', () => {
+    const { presses, engine } = editorSetup();
+    engine.pointerDown('KeyP', 1);
+    engine.pointerEnter('KeyH', 1);
+    expect(presses.map((p) => p.keyId)).toEqual(['KeyP', 'KeyH']);
   });
 });

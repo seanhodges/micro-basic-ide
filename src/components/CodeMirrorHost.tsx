@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { EditorState, Prec } from '@codemirror/state';
+import { Compartment, EditorState, Prec } from '@codemirror/state';
 import {
   EditorView,
   keymap,
@@ -9,10 +9,16 @@ import {
   drawSelection,
 } from '@codemirror/view';
 import {
+  cursorCharLeft,
+  cursorCharRight,
+  cursorLineDown,
+  cursorLineUp,
   defaultKeymap,
+  deleteCharBackward,
   history,
   historyKeymap,
   indentWithTab,
+  insertNewlineAndIndent,
 } from '@codemirror/commands';
 import {
   autocompletion,
@@ -26,6 +32,7 @@ import {
   defaultHighlightStyle,
 } from '@codemirror/language';
 import type { Dialect } from '../dialects/types';
+import type { EditorKeyAction } from '../keyboard/layoutSchema';
 import { dialectLinter } from '../editor/lintIntegration';
 import { useIdeStore } from '../app/store';
 import {
@@ -107,14 +114,62 @@ function renumberCurrentLine(view: EditorView): boolean {
   return true;
 }
 
+/** Suppresses the native on-screen keyboard while the virtual keyboard is on
+    (the editor stays focusable and physical keyboards are unaffected). */
+const inputModeCompartment = new Compartment();
+
+function inputModeExt(virtualKeyboard: boolean) {
+  return EditorView.contentAttributes.of(
+    virtualKeyboard ? { inputmode: 'none' } : {},
+  );
+}
+
+/** Apply one virtual-keyboard action to the editor. */
+function applyEditorAction(view: EditorView, action: EditorKeyAction): void {
+  if ('insert' in action) {
+    view.dispatch(view.state.replaceSelection(action.insert), {
+      scrollIntoView: true,
+      userEvent: 'input.type',
+    });
+    return;
+  }
+  switch (action.action) {
+    case 'backspace':
+      deleteCharBackward(view);
+      break;
+    case 'newline':
+      if (!autoNumberOnEnter(view)) insertNewlineAndIndent(view);
+      break;
+    case 'left':
+      cursorCharLeft(view);
+      break;
+    case 'right':
+      cursorCharRight(view);
+      break;
+    case 'up':
+      cursorLineUp(view);
+      break;
+    case 'down':
+      cursorLineDown(view);
+      break;
+  }
+}
+
 interface Props {
   dialect: Dialect;
   /** Pushed into the editor whenever seq changes. */
   override: { text: string; seq: number };
   onChange(text: string): void;
+  /** Receives a function the virtual keyboard calls to type into the editor. */
+  inputRef?: React.MutableRefObject<((action: EditorKeyAction) => void) | null>;
 }
 
-export function CodeMirrorHost({ dialect, override, onChange }: Props) {
+export function CodeMirrorHost({
+  dialect,
+  override,
+  onChange,
+  inputRef,
+}: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const lastSeq = useRef(-1);
@@ -156,7 +211,12 @@ export function CodeMirrorHost({ dialect, override, onChange }: Props) {
         EditorView.updateListener.of((update) => {
           if (update.docChanged)
             onChangeRef.current(update.state.doc.toString());
+          if (update.focusChanged)
+            useIdeStore.getState().setEditorFocused(update.view.hasFocus);
         }),
+        inputModeCompartment.of(
+          inputModeExt(useIdeStore.getState().virtualKeyboard),
+        ),
         EditorView.theme({
           '&': { height: '100%', fontSize: '14px' },
           '.cm-scroller': {
@@ -168,13 +228,25 @@ export function CodeMirrorHost({ dialect, override, onChange }: Props) {
     const view = new EditorView({ state, parent: hostRef.current });
     viewRef.current = view;
     lastSeq.current = override.seq;
+    if (inputRef)
+      inputRef.current = (action) => applyEditorAction(view, action);
     return () => {
       view.destroy();
       viewRef.current = null;
+      if (inputRef) inputRef.current = null;
+      useIdeStore.getState().setEditorFocused(false);
     };
     // The editor is rebuilt only when the dialect changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialect]);
+
+  // Keep the native-OSK suppression in sync with the virtual-keyboard flag.
+  const virtualKeyboard = useIdeStore((s) => s.virtualKeyboard);
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: inputModeCompartment.reconfigure(inputModeExt(virtualKeyboard)),
+    });
+  }, [virtualKeyboard]);
 
   useEffect(() => {
     const view = viewRef.current;

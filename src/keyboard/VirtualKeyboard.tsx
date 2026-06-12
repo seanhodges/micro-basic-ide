@@ -1,15 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MachineEmulator } from '../dialects/types';
-import type { KeyDef, KeyboardLayout } from './layoutSchema';
+import type {
+  EditorKeyAction,
+  KeyDef,
+  KeyboardLayout,
+  LayerDef,
+} from './layoutSchema';
 import { KeyboardInputEngine } from './inputEngine';
+import { isRepeatable, resolveEditorAction } from './editorActions';
+
+/**
+ * Where key presses go. Callers must keep the object identity stable
+ * (useMemo) or the engine — and its sticky-modifier state — resets.
+ */
+export type KeyboardTarget =
+  | {
+      kind: 'machine';
+      getMachine(): MachineEmulator | null;
+      /** Lets the emulator's rAF tick drive engine.onFrame(). Must be stable. */
+      registerFrameHook(cb: (() => void) | null): void;
+    }
+  | { kind: 'editor'; apply(action: EditorKeyAction): void };
 
 interface VirtualKeyboardProps {
   layout: KeyboardLayout;
-  getMachine: () => MachineEmulator | null;
+  target: KeyboardTarget;
   /** When false the keyboard greys out and ignores input. */
   enabled: boolean;
-  /** Lets the emulator's rAF tick drive engine.onFrame(). Must be stable. */
-  registerFrameHook: (cb: (() => void) | null) => void;
   sound: boolean;
   haptics: boolean;
 }
@@ -19,6 +36,19 @@ const KEYBOARD_POINTER_ID = -1;
 
 /** Below this container width there isn't room for every legend at once. */
 const COMPACT_MAX_WIDTH = 520;
+
+/** Below this viewport height keys shrink too far for every legend (must
+    match the landscape media query in styles.css). */
+const COMPACT_MAX_VIEWPORT_HEIGHT = 560;
+
+/** Hold-to-repeat timing for editor actions (backspace, cursor moves). */
+const REPEAT_DELAY_MS = 450;
+const REPEAT_INTERVAL_MS = 60;
+
+interface RepeatTimer {
+  timeout?: ReturnType<typeof setTimeout>;
+  interval?: ReturnType<typeof setInterval>;
+}
 
 function GlyphSvg({
   glyph,
@@ -50,25 +80,68 @@ function keyAriaLabel(
 
 export function VirtualKeyboard({
   layout,
-  getMachine,
+  target,
   enabled,
-  registerFrameHook,
   sound,
   haptics,
 }: VirtualKeyboardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const getMachineRef = useRef(getMachine);
-  getMachineRef.current = getMachine;
+  const targetRef = useRef(target);
+  targetRef.current = target;
   const soundRef = useRef(sound);
   soundRef.current = sound;
   const hapticsRef = useRef(haptics);
   hapticsRef.current = haptics;
 
-  // Rebuilt on machine/dialect swap (layout identity changes).
-  const engine = useMemo(
-    () => new KeyboardInputEngine(layout, () => getMachineRef.current()),
+  // Editor-target input mode (the ZX81 K/F/G cursor as a selector bar).
+  const editorModes =
+    target.kind === 'editor' ? (layout.editorModes ?? []) : [];
+  const [modeId, setModeId] = useState<string | null>(null);
+  useEffect(() => setModeId(null), [layout]);
+  const mode =
+    editorModes.find((m) => m.id === modeId) ?? editorModes[0] ?? null;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+
+  const baseLayer = useMemo(
+    () =>
+      layout.layers.find((l) => l.activeWhen.length === 0) ?? layout.layers[0]!,
     [layout],
   );
+  const baseLayerRef = useRef(baseLayer);
+  baseLayerRef.current = baseLayer;
+
+  /** Action resolved by the engine's key-down callback, for repeat setup. */
+  const lastActionRef = useRef<EditorKeyAction | null>(null);
+
+  // Rebuilt on machine/dialect swap (layout identity changes). Callbacks go
+  // through refs so the engine never holds stale closures.
+  const targetKind = target.kind;
+  const engine = useMemo(() => {
+    if (targetKind === 'machine') {
+      return new KeyboardInputEngine(layout, {
+        kind: 'machine',
+        getMachine: () => {
+          const t = targetRef.current;
+          return t.kind === 'machine' ? t.getMachine() : null;
+        },
+      });
+    }
+    return new KeyboardInputEngine(layout, {
+      kind: 'editor',
+      onKeyPress: (key: KeyDef, activeLayer: LayerDef) => {
+        const m = modeRef.current;
+        // In the base (ABC) mode the engine's layer applies (shift works);
+        // other modes pin the layer regardless of modifiers.
+        const layerId =
+          m && m.layer !== baseLayerRef.current.id ? m.layer : activeLayer.id;
+        const action = resolveEditorAction(layout, key, layerId);
+        lastActionRef.current = action;
+        const t = targetRef.current;
+        if (action && t.kind === 'editor') t.apply(action);
+      },
+    });
+  }, [layout, targetKind]);
   useEffect(() => () => engine.cancelAll(), [engine]);
 
   const [, setVersion] = useState(0);
@@ -80,34 +153,91 @@ export function VirtualKeyboard({
   }, [engine]);
 
   useEffect(() => {
-    registerFrameHook(() => engine.onFrame());
-    return () => registerFrameHook(null);
-  }, [engine, registerFrameHook]);
+    if (target.kind !== 'machine') return;
+    target.registerFrameHook(() => engine.onFrame());
+    return () => target.registerFrameHook(null);
+  }, [engine, target]);
+
+  // ---- hold-to-repeat (editor target only) --------------------------------
+
+  const repeatTimers = useRef(new Map<number, RepeatTimer>());
+  /** Key currently under each pointer, to detect slides for repeat resets. */
+  const pointerKey = useRef(new Map<number, string | null>());
+
+  const stopRepeat = (pointerId: number) => {
+    const timer = repeatTimers.current.get(pointerId);
+    if (!timer) return;
+    if (timer.timeout !== undefined) clearTimeout(timer.timeout);
+    if (timer.interval !== undefined) clearInterval(timer.interval);
+    repeatTimers.current.delete(pointerId);
+  };
+
+  const stopAllRepeats = () => {
+    for (const id of [...repeatTimers.current.keys()]) stopRepeat(id);
+  };
+  const stopAllRepeatsRef = useRef(stopAllRepeats);
+  stopAllRepeatsRef.current = stopAllRepeats;
+
+  const startRepeat = (pointerId: number, action: EditorKeyAction) => {
+    stopRepeat(pointerId);
+    const apply = () => {
+      const t = targetRef.current;
+      if (t.kind === 'editor') t.apply(action);
+    };
+    const timeout = setTimeout(() => {
+      const interval = setInterval(apply, REPEAT_INTERVAL_MS);
+      repeatTimers.current.set(pointerId, { interval });
+    }, REPEAT_DELAY_MS);
+    repeatTimers.current.set(pointerId, { timeout });
+  };
+
+  /** Consume the action captured by the engine callback during a key-down. */
+  const takeLastAction = (): EditorKeyAction | null => {
+    const action = lastActionRef.current;
+    lastActionRef.current = null;
+    return action;
+  };
+
+  useEffect(() => () => stopAllRepeatsRef.current(), []);
 
   useEffect(() => {
-    if (!enabled) engine.cancelAll();
+    if (!enabled) {
+      engine.cancelAll();
+      stopAllRepeatsRef.current();
+    }
   }, [enabled, engine]);
+
+  // Sticky state must not leak across input modes.
+  useEffect(() => {
+    engine.cancelAll();
+    stopAllRepeatsRef.current();
+  }, [modeId, engine]);
 
   // Compact mode: too narrow to render every legend without overlap, so
   // show the base layer plus one selectable secondary layer per key.
   const [compact, setCompact] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth < 600,
+    () =>
+      typeof window !== 'undefined' &&
+      (window.innerWidth < 600 ||
+        window.innerHeight < COMPACT_MAX_VIEWPORT_HEIGHT),
   );
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const observer = new ResizeObserver(() =>
-      setCompact(el.clientWidth < COMPACT_MAX_WIDTH),
-    );
+    const update = () =>
+      setCompact(
+        el.clientWidth < COMPACT_MAX_WIDTH ||
+          window.innerHeight < COMPACT_MAX_VIEWPORT_HEIGHT,
+      );
+    const observer = new ResizeObserver(update);
     observer.observe(el);
-    return () => observer.disconnect();
+    window.addEventListener('resize', update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
   }, []);
 
-  const baseLayer = useMemo(
-    () =>
-      layout.layers.find((l) => l.activeWhen.length === 0) ?? layout.layers[0]!,
-    [layout],
-  );
   const secondaryLayers = useMemo(
     () => layout.layers.filter((l) => l !== baseLayer),
     [layout, baseLayer],
@@ -121,7 +251,10 @@ export function VirtualKeyboard({
 
   // Any path that can lose pointers clears all matrix state (R5).
   useEffect(() => {
-    const cancelAll = () => engine.cancelAll();
+    const cancelAll = () => {
+      engine.cancelAll();
+      stopAllRepeatsRef.current();
+    };
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') cancelAll();
     };
@@ -169,8 +302,8 @@ export function VirtualKeyboard({
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-    // Load-bearing (R4): stops the tap from stealing focus from the canvas,
-    // so the physical keyboard keeps working.
+    // Load-bearing (R4): stops the tap from stealing focus from the canvas
+    // or the editor, so physical-keyboard input keeps working.
     e.preventDefault();
     if (!enabled) return;
     const keyId = (e.target as Element)
@@ -181,22 +314,37 @@ export function VirtualKeyboard({
     // hit-test slides with elementFromPoint.
     containerRef.current?.setPointerCapture(e.pointerId);
     activePointers.current.add(e.pointerId);
+    pointerKey.current.set(e.pointerId, keyId);
     engine.pointerDown(keyId, e.pointerId);
+    const action = takeLastAction();
+    if (action && isRepeatable(action)) startRepeat(e.pointerId, action);
     pressFeedback();
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!enabled || !activePointers.current.has(e.pointerId)) return;
-    engine.pointerEnter(keyIdAt(e.clientX, e.clientY), e.pointerId);
+    const keyId = keyIdAt(e.clientX, e.clientY);
+    const prev = pointerKey.current.get(e.pointerId);
+    engine.pointerEnter(keyId, e.pointerId);
+    if (keyId !== prev) {
+      pointerKey.current.set(e.pointerId, keyId);
+      stopRepeat(e.pointerId);
+      const action = takeLastAction();
+      if (action && isRepeatable(action)) startRepeat(e.pointerId, action);
+    }
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
     if (!activePointers.current.delete(e.pointerId)) return;
+    pointerKey.current.delete(e.pointerId);
+    stopRepeat(e.pointerId);
     engine.pointerUp(e.pointerId);
   };
 
   const onPointerCancel = (e: React.PointerEvent) => {
     if (!activePointers.current.delete(e.pointerId)) return;
+    pointerKey.current.delete(e.pointerId);
+    stopRepeat(e.pointerId);
     engine.cancel(e.pointerId);
   };
 
@@ -222,6 +370,7 @@ export function VirtualKeyboard({
       const key = flatKeys[focusIdx];
       if (key) {
         engine.pointerDown(key.id, KEYBOARD_POINTER_ID);
+        takeLastAction(); // no hold-to-repeat on the a11y path
         pressFeedback();
       }
       e.preventDefault();
@@ -238,9 +387,21 @@ export function VirtualKeyboard({
   const pressed = engine.getPressedKeyIds();
   const activeLayer = engine.getActiveLayer();
   const focusKeyId = flatKeys[focusIdx]?.id;
-  // An engaged modifier temporarily shows its own legends in compact mode.
+  // A non-base editor mode pins the highlighted layer; otherwise an engaged
+  // modifier decides it.
+  const modeLayerId = mode && mode.layer !== baseLayer.id ? mode.layer : null;
+  const highlightLayerId = modeLayerId ?? activeLayer.id;
+  // In compact mode the displayed secondary legends follow the same choice.
+  // For the editor target in the base mode, show the modifier-driven layer
+  // (its legends are the only secondaries reachable without a mode change).
+  const modifierLayer = layout.layers.find((l) => l.activeWhen.length > 0);
   const visibleSecondaryId =
-    activeLayer.id !== baseLayer.id ? activeLayer.id : legendLayerId;
+    modeLayerId ??
+    (activeLayer.id !== baseLayer.id
+      ? activeLayer.id
+      : target.kind === 'editor'
+        ? (modifierLayer?.id ?? legendLayerId)
+        : legendLayerId);
 
   return (
     <div
@@ -257,28 +418,53 @@ export function VirtualKeyboard({
       onKeyUp={onKeyUp}
       onBlur={() => engine.pointerUp(KEYBOARD_POINTER_ID)}
     >
-      {compact && secondaryLayers.length > 1 && (
+      {editorModes.length > 0 ? (
         <div
-          className="vk-legend-bar"
+          className="vk-legend-bar vk-mode-bar"
           role="radiogroup"
-          aria-label="Key legends shown"
+          aria-label="Input mode"
         >
-          {secondaryLayers.map((layer) => (
+          {editorModes.map((m) => (
             <button
-              key={layer.id}
-              className={`vk-legend-btn${layer.id === visibleSecondaryId ? ' active' : ''}`}
+              key={m.id}
+              className={`vk-legend-btn${m.id === mode?.id ? ' active' : ''}`}
               role="radio"
-              aria-checked={layer.id === visibleSecondaryId}
+              aria-checked={m.id === mode?.id}
               tabIndex={-1}
               onPointerDown={(e) => {
-                e.preventDefault(); // keep canvas focus (R4)
-                setLegendChoice(layer.id);
+                e.preventDefault(); // keep editor focus (R4)
+                setModeId(m.id);
               }}
             >
-              {layer.name ?? layer.id}
+              {m.name}
             </button>
           ))}
         </div>
+      ) : (
+        compact &&
+        secondaryLayers.length > 1 && (
+          <div
+            className="vk-legend-bar"
+            role="radiogroup"
+            aria-label="Key legends shown"
+          >
+            {secondaryLayers.map((layer) => (
+              <button
+                key={layer.id}
+                className={`vk-legend-btn${layer.id === visibleSecondaryId ? ' active' : ''}`}
+                role="radio"
+                aria-checked={layer.id === visibleSecondaryId}
+                tabIndex={-1}
+                onPointerDown={(e) => {
+                  e.preventDefault(); // keep canvas focus (R4)
+                  setLegendChoice(layer.id);
+                }}
+              >
+                {layer.name ?? layer.id}
+              </button>
+            ))}
+          </div>
+        )
       )}
       {layout.rows.map((row, rowIdx) => (
         <div
@@ -297,6 +483,12 @@ export function VirtualKeyboard({
             if (modState === 'locked') classes.push('vk-mod-locked');
             if (def.style) classes.push(`vk-style-${def.style}`);
             if (def.id === focusKeyId) classes.push('vk-focus');
+            if (
+              target.kind === 'editor' &&
+              !def.modifier &&
+              resolveEditorAction(layout, def, highlightLayerId) === null
+            )
+              classes.push('vk-noaction');
             return (
               <div
                 key={def.id}
@@ -305,7 +497,7 @@ export function VirtualKeyboard({
                 style={{ gridColumn: `span ${def.spanX}` }}
                 role="button"
                 tabIndex={-1}
-                aria-label={keyAriaLabel(def, layout, activeLayer.id)}
+                aria-label={keyAriaLabel(def, layout, highlightLayerId)}
                 aria-pressed={
                   def.modifier
                     ? modState !== 'off'
@@ -327,7 +519,7 @@ export function VirtualKeyboard({
                       `vk-pos-${layer.position}`,
                       `vk-layer-${layer.id}`,
                     ];
-                    if (layer.id === activeLayer.id) cls.push('vk-active');
+                    if (layer.id === highlightLayerId) cls.push('vk-active');
                     return (
                       <span key={layer.id} className={cls.join(' ')}>
                         {label.glyph ? (

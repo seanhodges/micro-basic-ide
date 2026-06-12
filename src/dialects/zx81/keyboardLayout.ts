@@ -1,4 +1,5 @@
 import type {
+  EditorKeyAction,
   GlyphRegistry,
   KeyDef,
   KeyLabel,
@@ -78,23 +79,74 @@ const zx81Glyphs: GlyphRegistry = {
 };
 
 // ---------------------------------------------------------------------------
+// What each block-graphics glyph inserts as editor text: the charset's
+// unicode block elements, or backslash escapes for the chequered greys
+// (see charset.ts GRAPHIC_UNICODE / ESCAPES).
+
+const GRAPHIC_INSERT: Record<string, string> = {
+  quadTL: '▘',
+  quadTR: '▝',
+  quadBL: '▖',
+  quadBR: '▗',
+  halfT: '▀',
+  halfB: '▄',
+  halfL: '▌',
+  halfR: '▐',
+  solid: '█',
+  q3NoTL: '▟',
+  q3NoTR: '▙',
+  q3NoBL: '▜',
+  q3NoBR: '▛',
+  diagTLBR: '▚',
+  diagTRBL: '▞',
+  grey: '▒',
+  greyInv: '\\||',
+  greyT: "\\!'",
+  greyB: '\\!.',
+  greyTSolidB: "\\|'",
+  solidTGreyB: '\\|.',
+};
+
+// ---------------------------------------------------------------------------
 // Key data. Label tuple order matches `layers` below:
 // [main, shift, keyword, function, graphic]
+//
+// A text legend is a plain string (editor action derived from the layer's
+// editorInsertStyle) or an object overriding what it does in the editor.
 
-type Legends = [
-  string,
-  string | null,
-  string | null,
-  string | null,
-  string | null,
-];
+type Legend = string | { text: string; editor: EditorKeyAction | null } | null;
+
+/** Legend that inserts the keyword plus a trailing space. */
+const word = (text: string): Legend => ({
+  text,
+  editor: { insert: `${text} ` },
+});
+/** Legend bound to an editing action (backspace, cursor moves, newline). */
+const act = (
+  text: string,
+  action: 'backspace' | 'newline' | 'left' | 'right' | 'up' | 'down',
+): Legend => ({ text, editor: { action } });
+/** Legend that inserts different text than it shows. */
+const ins = (text: string, insert: string): Legend => ({
+  text,
+  editor: { insert },
+});
+/** Legend that does nothing in the editor (machine-only commands). */
+const noop = (text: string): Legend => ({ text, editor: null });
+
+type Legends = [Legend, Legend, Legend, Legend, string | null];
 
 function key(
   token: string,
   [main, shift, keyword, fn, graphic]: Legends,
 ): KeyDef {
-  const lbl = (text: string | null): KeyLabel | null =>
-    text === null ? null : { text };
+  const lbl = (legend: Legend): KeyLabel | null =>
+    legend === null
+      ? null
+      : typeof legend === 'string'
+        ? { text: legend }
+        : { text: legend.text, editor: legend.editor };
+  const glyphInsert = graphic === null ? undefined : GRAPHIC_INSERT[graphic];
   return {
     id: token,
     spanX: 4,
@@ -104,28 +156,33 @@ function key(
       lbl(shift),
       lbl(keyword),
       lbl(fn),
-      graphic === null ? null : { glyph: graphic },
+      graphic === null
+        ? null
+        : {
+            glyph: graphic,
+            editor: glyphInsert === undefined ? null : { insert: glyphInsert },
+          },
     ],
   };
 }
 
 const rows: KeyDef[][] = [
   [
-    key('Digit1', ['1', 'EDIT', null, null, 'quadTL']),
-    key('Digit2', ['2', 'AND', null, null, 'quadTR']),
-    key('Digit3', ['3', 'THEN', null, null, 'quadBR']),
-    key('Digit4', ['4', 'TO', null, null, 'quadBL']),
-    key('Digit5', ['5', '←', null, null, 'halfL']),
-    key('Digit6', ['6', '↓', null, null, 'halfB']),
-    key('Digit7', ['7', '↑', null, null, 'halfT']),
-    key('Digit8', ['8', '→', null, null, 'halfR']),
-    key('Digit9', ['9', 'GRAPHICS', null, null, null]),
-    key('Digit0', ['0', 'RUBOUT', null, null, null]),
+    key('Digit1', ['1', noop('EDIT'), null, null, 'quadTL']),
+    key('Digit2', ['2', word('AND'), null, null, 'quadTR']),
+    key('Digit3', ['3', word('THEN'), null, null, 'quadBR']),
+    key('Digit4', ['4', word('TO'), null, null, 'quadBL']),
+    key('Digit5', ['5', act('←', 'left'), null, null, 'halfL']),
+    key('Digit6', ['6', act('↓', 'down'), null, null, 'halfB']),
+    key('Digit7', ['7', act('↑', 'up'), null, null, 'halfT']),
+    key('Digit8', ['8', act('→', 'right'), null, null, 'halfR']),
+    key('Digit9', ['9', noop('GRAPHICS'), null, null, null]),
+    key('Digit0', ['0', act('RUBOUT', 'backspace'), null, null, null]),
   ],
   [
     key('KeyQ', ['Q', '""', 'PLOT', 'SIN', 'q3NoTL']),
-    key('KeyW', ['W', 'OR', 'UNPLOT', 'COS', 'q3NoTR']),
-    key('KeyE', ['E', 'STEP', 'REM', 'TAN', 'q3NoBR']),
+    key('KeyW', ['W', word('OR'), 'UNPLOT', 'COS', 'q3NoTR']),
+    key('KeyE', ['E', word('STEP'), 'REM', 'TAN', 'q3NoBR']),
     key('KeyR', ['R', '<=', 'RUN', 'INT', 'q3NoBL']),
     key('KeyT', ['T', '<>', 'RAND', 'RND', 'diagTRBL']),
     key('KeyY', ['Y', '>=', 'RETURN', 'STR$', 'diagTLBR']),
@@ -135,17 +192,24 @@ const rows: KeyDef[][] = [
     key('KeyP', ['P', '"', 'PRINT', 'TAB', null]),
   ],
   [
-    key('KeyA', ['A', 'STOP', 'NEW', 'ARCSIN', 'grey']),
-    key('KeyS', ['S', 'LPRINT', 'SAVE', 'ARCCOS', 'greyT']),
-    key('KeyD', ['D', 'SLOW', 'DIM', 'ARCTAN', 'greyB']),
-    key('KeyF', ['F', 'FAST', 'FOR', 'SGN', 'greyTSolidB']),
-    key('KeyG', ['G', 'LLIST', 'GOTO', 'ABS', 'solidTGreyB']),
+    key('KeyA', ['A', word('STOP'), 'NEW', 'ARCSIN', 'grey']),
+    key('KeyS', ['S', word('LPRINT'), 'SAVE', 'ARCCOS', 'greyT']),
+    key('KeyD', ['D', word('SLOW'), 'DIM', 'ARCTAN', 'greyB']),
+    key('KeyF', ['F', word('FAST'), 'FOR', 'SGN', 'greyTSolidB']),
+    key('KeyG', ['G', word('LLIST'), 'GOTO', 'ABS', 'solidTGreyB']),
     key('KeyH', ['H', '**', 'GOSUB', 'SQR', 'greyInv']),
-    key('KeyJ', ['J', '−', 'LOAD', 'VAL', null]),
+    // '−' is U+2212 (not in the ZX81 charset); insert the ASCII hyphen.
+    key('KeyJ', ['J', ins('−', '-'), 'LOAD', 'VAL', null]),
     key('KeyK', ['K', '+', 'LIST', 'LEN', null]),
     key('KeyL', ['L', '=', 'LET', 'USR', null]),
     {
-      ...key('Enter', ['NEW LINE', 'FUNCTION', null, null, null]),
+      ...key('Enter', [
+        act('NEW LINE', 'newline'),
+        noop('FUNCTION'),
+        null,
+        null,
+        null,
+      ]),
       style: 'small-main',
     },
   ],
@@ -167,7 +231,7 @@ const rows: KeyDef[][] = [
     key('KeyM', ['M', '>', 'PAUSE', 'PI', null]),
     key('Period', ['.', ',', null, null, null]),
     {
-      ...key('Space', ['SPACE', '£', null, null, 'solid']),
+      ...key('Space', [ins('SPACE', ' '), '£', null, null, 'solid']),
       style: 'small-main',
     },
   ],
@@ -179,35 +243,53 @@ const rows: KeyDef[][] = [
       spanX: 8,
       emits: ['Shift', 'Digit1'],
       style: 'extra',
-      labels: [{ text: 'EDIT' }, null, null, null, null],
+      labels: [{ text: 'EDIT', editor: null }, null, null, null, null],
     },
     {
       id: 'x-left',
       spanX: 4,
       emits: ['Shift', 'Digit5'],
       style: 'extra',
-      labels: [{ text: '←' }, null, null, null, null],
+      labels: [
+        { text: '←', editor: { action: 'left' } },
+        null,
+        null,
+        null,
+        null,
+      ],
     },
     {
       id: 'x-down',
       spanX: 4,
       emits: ['Shift', 'Digit6'],
       style: 'extra',
-      labels: [{ text: '↓' }, null, null, null, null],
+      labels: [
+        { text: '↓', editor: { action: 'down' } },
+        null,
+        null,
+        null,
+        null,
+      ],
     },
     {
       id: 'x-up',
       spanX: 4,
       emits: ['Shift', 'Digit7'],
       style: 'extra',
-      labels: [{ text: '↑' }, null, null, null, null],
+      labels: [{ text: '↑', editor: { action: 'up' } }, null, null, null, null],
     },
     {
       id: 'x-right',
       spanX: 4,
       emits: ['Shift', 'Digit8'],
       style: 'extra',
-      labels: [{ text: '→' }, null, null, null, null],
+      labels: [
+        { text: '→', editor: { action: 'right' } },
+        null,
+        null,
+        null,
+        null,
+      ],
     },
     {
       id: 'x-quote',
@@ -221,7 +303,13 @@ const rows: KeyDef[][] = [
       spanX: 8,
       emits: ['Shift', 'Digit0'],
       style: 'extra',
-      labels: [{ text: 'RUBOUT' }, null, null, null, null],
+      labels: [
+        { text: 'RUBOUT', editor: { action: 'backspace' } },
+        null,
+        null,
+        null,
+        null,
+      ],
     },
   ],
 ];
@@ -232,11 +320,40 @@ export const zx81KeyboardLayout: KeyboardLayout = {
   theme: 'vk-theme-zx81',
   gridColumns: 40,
   layers: [
-    { id: 'main', position: 'center', activeWhen: [] },
-    { id: 'shift', name: 'SHIFT', position: 'tr', activeWhen: ['shift'] },
-    { id: 'keyword', name: 'KEYWORD', position: 'bl', activeWhen: [] },
-    { id: 'function', name: 'FUNCTION', position: 'below', activeWhen: [] },
+    {
+      id: 'main',
+      position: 'center',
+      activeWhen: [],
+      editorInsertStyle: 'char',
+    },
+    {
+      id: 'shift',
+      name: 'SHIFT',
+      position: 'tr',
+      activeWhen: ['shift'],
+      editorInsertStyle: 'char',
+    },
+    {
+      id: 'keyword',
+      name: 'KEYWORD',
+      position: 'bl',
+      activeWhen: [],
+      editorInsertStyle: 'word',
+    },
+    {
+      id: 'function',
+      name: 'FUNCTION',
+      position: 'below',
+      activeWhen: [],
+      editorInsertStyle: 'word',
+    },
     { id: 'graphic', name: 'GRAPHICS', position: 'br', activeWhen: [] },
+  ],
+  editorModes: [
+    { id: 'abc', name: 'ABC', layer: 'main' },
+    { id: 'keyword', name: 'KEYWORD', layer: 'keyword' },
+    { id: 'function', name: 'FUNCTION', layer: 'function' },
+    { id: 'graphic', name: 'GRAPHICS', layer: 'graphic' },
   ],
   modifiers: [{ id: 'shift', emits: ['Shift'], sticky: true, lockable: true }],
   rows,

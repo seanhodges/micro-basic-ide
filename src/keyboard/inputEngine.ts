@@ -3,6 +3,16 @@ import type { KeyDef, KeyboardLayout, LayerDef } from './layoutSchema';
 
 export type ModifierState = 'off' | 'held' | 'sticky' | 'locked';
 
+/**
+ * Where engine output goes. 'machine' drives the emulator key matrix with
+ * frame-counted releases; 'editor' fires a callback on key-down (with the
+ * layer active at that moment) and never touches the machine, so it works
+ * while the emulator is stopped.
+ */
+export type EngineTarget =
+  | { kind: 'machine'; getMachine(): MachineEmulator | null }
+  | { kind: 'editor'; onKeyPress(key: KeyDef, activeLayer: LayerDef): void };
+
 const DEFAULT_MIN_HOLD_FRAMES = 3;
 
 interface ActivePress {
@@ -52,10 +62,14 @@ export class KeyboardInputEngine {
 
   constructor(
     private readonly layout: KeyboardLayout,
-    private readonly getMachine: () => MachineEmulator | null,
+    private readonly target: EngineTarget,
   ) {
+    // Editor presses act on key-down; releases need no frame counting (the
+    // emulator may not even be running, so frames may never tick).
     this.minHoldFrames =
-      layout.options?.minHoldFrames ?? DEFAULT_MIN_HOLD_FRAMES;
+      target.kind === 'editor'
+        ? 0
+        : (layout.options?.minHoldFrames ?? DEFAULT_MIN_HOLD_FRAMES);
     for (const row of layout.rows)
       for (const k of row) this.keyById.set(k.id, k);
     for (const m of layout.modifiers) this.modifierStates.set(m.id, 'off');
@@ -116,7 +130,8 @@ export class KeyboardInputEngine {
     for (const id of this.modifierStates.keys())
       this.modifierStates.set(id, 'off');
     this.usedWhileHeld.clear();
-    this.getMachine()?.releaseAllKeys();
+    if (this.target.kind === 'machine')
+      this.target.getMachine()?.releaseAllKeys();
     this.notify();
   }
 
@@ -165,6 +180,9 @@ export class KeyboardInputEngine {
   // ---- internals ----------------------------------------------------------
 
   private keyDown(key: KeyDef, pointerId: number): void {
+    // The editor callback sees the layer before sticky consumption below.
+    if (this.target.kind === 'editor')
+      this.target.onKeyPress(key, this.getActiveLayer());
     const consumesModifiers: string[] = [];
     for (const [id, state] of this.modifierStates) {
       if (state === 'sticky') consumesModifiers.push(id);
@@ -279,14 +297,16 @@ export class KeyboardInputEngine {
   private pressToken(token: string): void {
     const count = (this.tokenCounts.get(token) ?? 0) + 1;
     this.tokenCounts.set(token, count);
-    if (count === 1) this.getMachine()?.setKey(token, true);
+    if (count === 1 && this.target.kind === 'machine')
+      this.target.getMachine()?.setKey(token, true);
   }
 
   private releaseToken(token: string): void {
     const count = this.tokenCounts.get(token) ?? 0;
     if (count <= 1) {
       this.tokenCounts.delete(token);
-      if (count === 1) this.getMachine()?.setKey(token, false);
+      if (count === 1 && this.target.kind === 'machine')
+        this.target.getMachine()?.setKey(token, false);
     } else {
       this.tokenCounts.set(token, count - 1);
     }

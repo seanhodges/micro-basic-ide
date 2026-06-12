@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useIdeStore, type MobileTab } from '../app/store';
 import { useMediaQuery, MOBILE_QUERY } from '../app/useMediaQuery';
 import { useProgramStats } from '../app/useProgramStats';
@@ -7,6 +7,11 @@ import {
   MIN_SPLIT_RATIO,
   MAX_SPLIT_RATIO,
 } from '../storage/settings';
+import type { EditorKeyAction } from '../keyboard/layoutSchema';
+import {
+  VirtualKeyboard,
+  type KeyboardTarget,
+} from '../keyboard/VirtualKeyboard';
 import { CodeMirrorHost } from './CodeMirrorHost';
 import { EmulatorPane } from './EmulatorPane';
 import { AiPanel } from './AiPanel';
@@ -15,6 +20,24 @@ import { MobileTabBar } from './MobileTabBar';
 
 const AI_PANEL_WIDTH = 340;
 const DIVIDER_WIDTH = 6;
+
+/** How long the editor keyboard lingers after the editor loses focus —
+    avoids flicker when focus briefly moves (toolbar taps, prompts). */
+const EDITOR_KB_HIDE_DELAY_MS = 250;
+
+/** True immediately when `value` is true; false only after a short delay. */
+function useDebouncedFalse(value: boolean, delayMs: number): boolean {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    if (value) {
+      setDebounced(true);
+      return;
+    }
+    const timer = setTimeout(() => setDebounced(false), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+  return debounced;
+}
 
 function ProgramStats() {
   const dialect = useIdeStore((s) => s.dialect);
@@ -58,9 +81,31 @@ export function Workspace() {
   const setSplitRatio = useIdeStore((s) => s.setSplitRatio);
   const requestRun = useIdeStore((s) => s.requestRun);
 
+  const virtualKeyboard = useIdeStore((s) => s.virtualKeyboard);
+  const editorFocused = useIdeStore((s) => s.editorFocused);
+  const keyboardSound = useIdeStore((s) => s.keyboardSound);
+  const keyboardHaptics = useIdeStore((s) => s.keyboardHaptics);
+
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const workspaceRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+
+  // The virtual keyboard types into the editor through this handle; presses
+  // preventDefault so the editor never loses focus while typing.
+  const editorInputRef = useRef<((action: EditorKeyAction) => void) | null>(
+    null,
+  );
+  const editorTarget = useMemo<KeyboardTarget>(
+    () => ({
+      kind: 'editor',
+      apply: (action) => editorInputRef.current?.(action),
+    }),
+    [],
+  );
+  const showEditorKeyboard = useDebouncedFalse(
+    editorFocused,
+    EDITOR_KB_HIDE_DELAY_MS,
+  );
 
   const hidden = (tab: MobileTab) =>
     isMobile && mobileTab !== tab ? 'tab-hidden' : '';
@@ -100,19 +145,35 @@ export function Workspace() {
       style={cols ? { gridTemplateColumns: cols } : undefined}
     >
       <div className={`editor-pane ${hidden('editor')}`}>
-        <CodeMirrorHost
-          dialect={dialect}
-          override={docOverride}
-          onChange={setSource}
-        />
-        {isMobile && mobileTab === 'editor' && (
-          <button
-            className="fab-run"
-            onClick={requestRun}
-            title="Build and run in the emulator"
-          >
-            ▶
-          </button>
+        {/* The FAB anchors to this box so the docked keyboard below never
+            sits underneath it. */}
+        <div className="editor-main">
+          <CodeMirrorHost
+            dialect={dialect}
+            override={docOverride}
+            onChange={setSource}
+            inputRef={editorInputRef}
+          />
+          {isMobile && mobileTab === 'editor' && (
+            <button
+              className="fab-run"
+              onClick={requestRun}
+              title="Build and run in the emulator"
+            >
+              ▶
+            </button>
+          )}
+        </div>
+        {virtualKeyboard && showEditorKeyboard && (
+          <div className="editor-vk-host">
+            <VirtualKeyboard
+              layout={dialect.keyboardLayout}
+              target={editorTarget}
+              enabled
+              sound={keyboardSound}
+              haptics={keyboardHaptics}
+            />
+          </div>
         )}
       </div>
       <div

@@ -49,6 +49,8 @@ interface IdeState {
   keyboardSound: boolean;
   /** Haptic buzz on virtual key presses (where supported). */
   keyboardHaptics: boolean;
+  /** Whether the code editor currently has focus (drives its keyboard). */
+  editorFocused: boolean;
   /** Active tab in the mobile (portrait) layout. */
   mobileTab: MobileTab;
   /** Editor/monitor split position on desktop (fraction of workspace width). */
@@ -74,6 +76,7 @@ interface IdeState {
   setVirtualKeyboard(on: boolean): void;
   setKeyboardSound(on: boolean): void;
   setKeyboardHaptics(on: boolean): void;
+  setEditorFocused(on: boolean): void;
   setMobileTab(tab: MobileTab): void;
   setSplitRatio(n: number): void;
   setEmulatorStatus(status: EmulatorStatus): void;
@@ -115,6 +118,7 @@ export const useIdeStore = create<IdeState>((set) => ({
     typeof localStorage !== 'undefined' ? getKeyboardSound() : false,
   keyboardHaptics:
     typeof localStorage !== 'undefined' ? getKeyboardHaptics() : true,
+  editorFocused: false,
   mobileTab: 'editor',
   splitRatio: typeof localStorage !== 'undefined' ? getSplitRatio() : 0.5,
   aiPanelOpen: false,
@@ -158,6 +162,7 @@ export const useIdeStore = create<IdeState>((set) => ({
     persistKeyboardHaptics(on);
     set({ keyboardHaptics: on });
   },
+  setEditorFocused: (on) => set({ editorFocused: on }),
   setMobileTab: (tab) => set({ mobileTab: tab }),
   setSplitRatio: (n) => set({ splitRatio: n }),
   setEmulatorStatus: (status) => set({ emulatorStatus: status }),
