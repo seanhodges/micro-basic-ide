@@ -102,13 +102,20 @@ export interface Dialect {
   lint(source: string): TokenizeError[];
   /** URL of the machine ROM (resolved against the deployed base path). */
   romUrl: string;
-  createEmulator(opts: { rom: Uint8Array; ramKb: 16 | 32 | 64 }): MachineEmulator;
+  createEmulator(opts: {
+    rom: Uint8Array;
+    ramKb: 16 | 32 | 64;
+  }): MachineEmulator;
   buildTargets: BuildTarget[];
   /** Cassette-audio loading support, when the machine loads from tape. */
   audio?: {
     sampleRate: number;
     /** Throws when the source has tokenizer errors. */
-    buildSamples(source: string, programName: string, robust: boolean): Float32Array;
+    buildSamples(
+      source: string,
+      programName: string,
+      robust: boolean,
+    ): Float32Array;
     /** Loading instructions shown to the user, e.g. how to type LOAD "". */
     loadInstructions: string;
   };

@@ -37,9 +37,13 @@ function ProgramStats() {
         {stats.bytes.toLocaleString()} bytes ({pct}% of 16K budget)
       </p>
       <p className={stats.errors > 0 ? 'status-errors' : ''}>
-        {stats.errors === 0 ? 'no errors' : `${stats.errors} error${stats.errors > 1 ? 's' : ''}`}
+        {stats.errors === 0
+          ? 'no errors'
+          : `${stats.errors} error${stats.errors > 1 ? 's' : ''}`}
       </p>
-      <p className={`status-emu ${emulatorStatus}`}>emulator: {emulatorStatus}</p>
+      <p className={`status-emu ${emulatorStatus}`}>
+        emulator: {emulatorStatus}
+      </p>
     </div>
   );
 }
@@ -58,7 +62,8 @@ export function Workspace() {
   const workspaceRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
 
-  const hidden = (tab: MobileTab) => (isMobile && mobileTab !== tab ? 'tab-hidden' : '');
+  const hidden = (tab: MobileTab) =>
+    isMobile && mobileTab !== tab ? 'tab-hidden' : '';
 
   const onDividerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -95,7 +100,11 @@ export function Workspace() {
       style={cols ? { gridTemplateColumns: cols } : undefined}
     >
       <div className={`editor-pane ${hidden('editor')}`}>
-        <CodeMirrorHost dialect={dialect} override={docOverride} onChange={setSource} />
+        <CodeMirrorHost
+          dialect={dialect}
+          override={docOverride}
+          onChange={setSource}
+        />
         {isMobile && mobileTab === 'editor' && (
           <button
             className="fab-run"

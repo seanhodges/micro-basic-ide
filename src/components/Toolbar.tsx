@@ -74,7 +74,10 @@ export function Toolbar() {
         <div className="menu" ref={menuRef}>
           <button onClick={() => setFileMenuOpen((o) => !o)}>File ▾</button>
           {fileMenuOpen && (
-            <div className="menu-items" onMouseLeave={() => setFileMenuOpen(false)}>
+            <div
+              className="menu-items"
+              onMouseLeave={() => setFileMenuOpen(false)}
+            >
               <button onClick={newFile}>New</button>
               <button onClick={openFile}>Open .bas…</button>
               <button onClick={importP}>Import .P…</button>
@@ -100,10 +103,18 @@ export function Toolbar() {
         <button className="desktop-only" onClick={newFile} title="New program">
           New
         </button>
-        <button className="desktop-only" onClick={openFile} title="Open a .bas file">
+        <button
+          className="desktop-only"
+          onClick={openFile}
+          title="Open a .bas file"
+        >
           Load
         </button>
-        <button className="desktop-only" onClick={saveFile} title="Save as .bas">
+        <button
+          className="desktop-only"
+          onClick={saveFile}
+          title="Save as .bas"
+        >
           Save
         </button>
         <button
@@ -158,7 +169,11 @@ export function Toolbar() {
         >
           ✦
         </button>
-        <button className="icon-btn" onClick={() => setSettingsOpen(true)} title="Settings">
+        <button
+          className="icon-btn"
+          onClick={() => setSettingsOpen(true)}
+          title="Settings"
+        >
           ⚙
         </button>
       </div>

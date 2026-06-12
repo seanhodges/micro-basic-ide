@@ -23,9 +23,13 @@ export function StatusBar() {
         {stats.bytes.toLocaleString()} bytes ({pct}% of 16K budget)
       </span>
       <span className={stats.errors > 0 ? 'status-errors' : ''}>
-        {stats.errors === 0 ? 'no errors' : `${stats.errors} error${stats.errors > 1 ? 's' : ''}`}
+        {stats.errors === 0
+          ? 'no errors'
+          : `${stats.errors} error${stats.errors > 1 ? 's' : ''}`}
       </span>
-      <span className={`status-emu ${emulatorStatus}`}>emulator: {emulatorStatus}</span>
+      <span className={`status-emu ${emulatorStatus}`}>
+        emulator: {emulatorStatus}
+      </span>
     </div>
   );
 }

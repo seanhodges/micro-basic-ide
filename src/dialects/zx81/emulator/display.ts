@@ -13,7 +13,10 @@ const CHARSET_ROM_OFFSET = 0x1e00;
  * This is a frame snapshot — perfectly faithful for BASIC programs without
  * cycle-exact video tricks.
  */
-export function renderDisplay(memory: Zx81Memory, pixels: Uint8ClampedArray): void {
+export function renderDisplay(
+  memory: Zx81Memory,
+  pixels: Uint8ClampedArray,
+): void {
   pixels.fill(0xff); // white background (and alpha)
 
   const dfile = memory.readWord(D_FILE);

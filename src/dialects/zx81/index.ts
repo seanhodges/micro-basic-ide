@@ -6,7 +6,11 @@ import { detokenizeProgram } from './detokenizer';
 import { buildPFile, parsePFile } from './pfile';
 import { zx81LanguageSupport, zx81CompletionSource } from './language';
 import { zx81AiProfile } from './aiProfile';
-import { zx81BuildTargets, buildCassetteSamples, CASSETTE_SAMPLE_RATE } from './targets';
+import {
+  zx81BuildTargets,
+  buildCassetteSamples,
+  CASSETTE_SAMPLE_RATE,
+} from './targets';
 import { Zx81Machine } from './emulator/zx81Machine';
 
 export const zx81: Dialect = {
@@ -20,7 +24,10 @@ export const zx81: Dialect = {
 
   tokenize(source: string): TokenizeResult {
     const { bytes, errors } = tokenizeProgram(source);
-    const image = errors.length === 0 && bytes.length > 0 ? buildPFile(bytes) : new Uint8Array(0);
+    const image =
+      errors.length === 0 && bytes.length > 0
+        ? buildPFile(bytes)
+        : new Uint8Array(0);
     return { programBytes: bytes, image, errors, byteSize: bytes.length };
   },
 

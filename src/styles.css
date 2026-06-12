@@ -264,7 +264,11 @@ textarea {
   inset: 0;
   pointer-events: none;
   background:
-    repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 14%) 2px 4px),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 2px,
+      rgb(0 0 0 / 14%) 2px 4px
+    ),
     radial-gradient(ellipse at center, transparent 62%, rgb(0 0 0 / 22%) 100%);
 }
 

@@ -56,7 +56,7 @@ power. See [docs/file-formats.md](docs/file-formats.md).
 
 1. **Cassette**: connect your headphone jack to the ZX81 EAR socket, volume
    to max. On the ZX81 type `LOAD ""` and press NEW LINE; in the IDE choose
-   **⇥ Hardware ▸ Play through speakers**. Use *robust mode* if loads fail.
+   **⇥ Hardware ▸ Play through speakers**. Use _robust mode_ if loads fail.
 2. **ZXpand / SD interfaces**: download the `.P` file and copy it across.
 3. **Serial bridge**: any microcontroller implementing the
    [bridge protocol](docs/serial-protocol.md) can receive programs via

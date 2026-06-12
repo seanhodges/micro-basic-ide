@@ -12,10 +12,11 @@
 export function encodeZxFloat(n: number): Uint8Array {
   const out = new Uint8Array(5);
   if (n === 0) return out;
-  if (!Number.isFinite(n)) throw new RangeError(`Cannot encode ${n} as ZX81 float`);
+  if (!Number.isFinite(n))
+    throw new RangeError(`Cannot encode ${n} as ZX81 float`);
 
   const negative = n < 0;
-  let m = Math.abs(n);
+  const m = Math.abs(n);
 
   let e = Math.floor(Math.log2(m)) + 1;
   let frac = m / 2 ** e; // in [0.5, 1) up to fp error
@@ -34,7 +35,8 @@ export function encodeZxFloat(n: number): Uint8Array {
     e += 1;
   }
 
-  if (e < -127 || e > 127) throw new RangeError(`Number out of ZX81 float range: ${n}`);
+  if (e < -127 || e > 127)
+    throw new RangeError(`Number out of ZX81 float range: ${n}`);
 
   out[0] = (e + 0x80) & 0xff;
   out[1] = (mant >>> 24) & 0xff;

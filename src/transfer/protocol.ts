@@ -51,7 +51,10 @@ export interface Block {
 export function splitBlocks(payload: Uint8Array): Block[] {
   const blocks: Block[] = [];
   for (let off = 0; off < payload.length; off += BLOCK_SIZE) {
-    const data = payload.subarray(off, Math.min(off + BLOCK_SIZE, payload.length));
+    const data = payload.subarray(
+      off,
+      Math.min(off + BLOCK_SIZE, payload.length),
+    );
     const wire = new Uint8Array(data.length + 4);
     wire.set(data, 0);
     new DataView(wire.buffer).setUint32(data.length, crc32(data), true);

@@ -12,7 +12,8 @@ export function TransferDialog() {
   const fileName = useIdeStore((s) => s.fileName);
   const dialect = useIdeStore((s) => s.dialect);
 
-  const defaultName = fileName.replace(/\.[^.]*$/, '').toUpperCase() || 'PROGRAM';
+  const defaultName =
+    fileName.replace(/\.[^.]*$/, '').toUpperCase() || 'PROGRAM';
   const [name, setName] = useState(defaultName);
   const [robust, setRobust] = useState(false);
   const [status, setStatus] = useState('');
@@ -33,7 +34,9 @@ export function TransferDialog() {
   const buildImage = (): Uint8Array => {
     const result = dialect.tokenize(source, { programName: baseName });
     if (result.errors.length > 0) {
-      throw new Error(`Program has ${result.errors.length} error(s) — fix them first`);
+      throw new Error(
+        `Program has ${result.errors.length} error(s) — fix them first`,
+      );
     }
     if (result.image.length === 0) throw new Error('Program is empty');
     return result.image;
@@ -44,18 +47,24 @@ export function TransferDialog() {
       const target = dialect.buildTargets.find((t) => t.id === targetId);
       if (!target) throw new Error(`No ${targetId} target for ${dialect.name}`);
       const blob = await target.build(source, { programName: baseName });
-      downloadBlob(blob, `${baseName.toLowerCase()}.${target.fileExtension ?? 'bin'}`);
+      downloadBlob(
+        blob,
+        `${baseName.toLowerCase()}.${target.fileExtension ?? 'bin'}`,
+      );
       setStatus(`${target.label} done.`);
     });
 
   const playAudio = guard(async () => {
     const audio = dialect.audio;
-    if (!audio) throw new Error(`${dialect.name} has no cassette audio support`);
+    if (!audio)
+      throw new Error(`${dialect.name} has no cassette audio support`);
     const samples = audio.buildSamples(source, baseName, robust);
     const playback = playSamples(samples, audio.sampleRate);
     playbackRef.current = playback;
     setPlaying(true);
-    setStatus(`Playing ${playback.durationSeconds.toFixed(0)}s of cassette audio…`);
+    setStatus(
+      `Playing ${playback.durationSeconds.toFixed(0)}s of cassette audio…`,
+    );
     await playback.done;
     setPlaying(false);
     setStatus('Playback finished.');
@@ -63,9 +72,13 @@ export function TransferDialog() {
 
   const downloadWav = guard(() => {
     const audio = dialect.audio;
-    if (!audio) throw new Error(`${dialect.name} has no cassette audio support`);
+    if (!audio)
+      throw new Error(`${dialect.name} has no cassette audio support`);
     const samples = audio.buildSamples(source, baseName, robust);
-    downloadBlob(samplesToWav(samples, audio.sampleRate), `${baseName.toLowerCase()}.wav`);
+    downloadBlob(
+      samplesToWav(samples, audio.sampleRate),
+      `${baseName.toLowerCase()}.wav`,
+    );
     setStatus('.wav downloaded — play it into the machine at high volume.');
   });
 
@@ -100,8 +113,9 @@ export function TransferDialog() {
           <div className="transfer-group">
             <h3>Cassette audio</h3>
             <p>
-              Connect this device&apos;s headphone output to the machine&apos;s EAR socket
-              and set the volume to maximum. {dialect.audio.loadInstructions}
+              Connect this device&apos;s headphone output to the machine&apos;s
+              EAR socket and set the volume to maximum.{' '}
+              {dialect.audio.loadInstructions}
             </p>
             <label className="inline">
               <input

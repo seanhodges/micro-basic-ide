@@ -114,7 +114,10 @@ export const INVERSE = 0x80;
  * Parse one editor character (possibly an escape/% sequence) starting at
  * index i. Returns the machine code and the number of source chars consumed.
  */
-export function parseChar(text: string, i: number): { code: number; length: number } {
+export function parseChar(
+  text: string,
+  i: number,
+): { code: number; length: number } {
   const ch = text[i]!;
   if (ch === '\\') {
     const esc = text.slice(i + 1, i + 3);
@@ -125,7 +128,11 @@ export function parseChar(text: string, i: number): { code: number; length: numb
   }
   if (ch === '%') {
     const next = text[i + 1];
-    if (next === undefined) throw new CharsetError('% at end of input (expected a character to invert)', i);
+    if (next === undefined)
+      throw new CharsetError(
+        '% at end of input (expected a character to invert)',
+        i,
+      );
     const upper = next.toUpperCase();
     const base = charToCode.get(upper);
     if (base === undefined || base > 0x3f) {

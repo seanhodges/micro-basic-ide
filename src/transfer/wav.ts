@@ -5,7 +5,8 @@ export function samplesToWav(samples: Float32Array, sampleRate: number): Blob {
   const view = new DataView(buffer);
 
   const writeString = (offset: number, s: string) => {
-    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i));
+    for (let i = 0; i < s.length; i++)
+      view.setUint8(offset + i, s.charCodeAt(i));
   };
 
   writeString(0, 'RIFF');

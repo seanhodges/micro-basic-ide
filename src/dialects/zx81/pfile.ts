@@ -22,7 +22,10 @@ const DISPLAY_FILE_COLLAPSED = 25; // leading NEWLINE + 24 empty rows
  * from 0x4009 (VERSN) up to E_LINE-1, exactly as the ROM's SAVE writes it.
  * Layout: sysvars | program | collapsed display file | variables terminator.
  */
-export function buildPFile(programBytes: Uint8Array, opts: PFileOptions = {}): Uint8Array {
+export function buildPFile(
+  programBytes: Uint8Array,
+  opts: PFileOptions = {},
+): Uint8Array {
   const autoRun = opts.autoRun ?? true;
   const slow = opts.slow ?? true;
 

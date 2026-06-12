@@ -26,11 +26,11 @@ implement, plus notes on delivering the program to the ZX81.
 +-------------------------------------+
 ```
 
-| Field | Value |
-| --- | --- |
-| magic | `5A 38 31 21` ("Z81!") |
-| cmd | `0x01` = LOAD_P (payload is a raw .P image) |
-| length | payload byte count |
+| Field  | Value                                       |
+| ------ | ------------------------------------------- |
+| magic  | `5A 38 31 21` ("Z81!")                      |
+| cmd    | `0x01` = LOAD_P (payload is a raw .P image) |
+| length | payload byte count                          |
 
 The final block may be shorter than 256 bytes; its CRC32 still follows it.
 CRC32 is the standard reflected polynomial `0xEDB88320` (same as zlib).

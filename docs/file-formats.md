@@ -8,17 +8,17 @@ followed by exactly one statement. Keywords are written as words (`PRINT`,
 
 Special character conventions (zxtext2p-compatible where practical):
 
-| Source | Meaning |
-| --- | --- |
-| `▘▝▀▖▌▞▛` | quarter/half block graphics (codes 0x01–0x07) |
-| `█▟▙▄▜▐▚▗` | inverse block graphics (0x80–0x87) |
-| `▒` | grey block (0x08) |
-| `\!!` `\!'` `\!.` | grey full / top / bottom (0x08–0x0A) |
-| `\||` `\|'` `\|.` | inverse grey full / top / bottom (0x88–0x8A) |
-| `\' ` `\ '` `\''` … | quadrant escapes: left+right column, `'`=top `.`=bottom `:`=full |
-| `%A` … `%9` | inverse video character |
-| `""` inside a string | the quote-image character (0xC0) |
-| `£` | pound sign (0x0C) |
+| Source               | Meaning                                                          |
+| -------------------- | ---------------------------------------------------------------- | -------------------------------------------- |
+| `▘▝▀▖▌▞▛`            | quarter/half block graphics (codes 0x01–0x07)                    |
+| `█▟▙▄▜▐▚▗`           | inverse block graphics (0x80–0x87)                               |
+| `▒`                  | grey block (0x08)                                                |
+| `\!!` `\!'` `\!.`    | grey full / top / bottom (0x08–0x0A)                             |
+| `\|                  | ` `\|'` `\|.`                                                    | inverse grey full / top / bottom (0x88–0x8A) |
+| `\' ` `\ '` `\''` …  | quadrant escapes: left+right column, `'`=top `.`=bottom `:`=full |
+| `%A` … `%9`          | inverse video character                                          |
+| `""` inside a string | the quote-image character (0xC0)                                 |
+| `£`                  | pound sign (0x0C)                                                |
 
 `#` and other characters outside the ZX81 set are tokenizer errors.
 

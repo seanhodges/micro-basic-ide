@@ -135,7 +135,8 @@ export class Zx81Machine implements MachineEmulator {
   /** True once the boot screen shows the inverse-K cursor. */
   private hasKCursor(): boolean {
     const dFile = this.memory.readWord(D_FILE);
-    if (dFile < SYSVARS_BASE || this.memory.read(dFile) !== NEWLINE) return false;
+    if (dFile < SYSVARS_BASE || this.memory.read(dFile) !== NEWLINE)
+      return false;
     let addr = dFile;
     for (let i = 0; i < 24 * 33 + 1; i++, addr++) {
       if (this.memory.read(addr) === 0xb0) return true; // inverse K

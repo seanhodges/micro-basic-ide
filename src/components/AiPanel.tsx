@@ -1,6 +1,11 @@
 import { useRef, useState } from 'react';
 import { useIdeStore } from '../app/store';
-import { streamChat, describeAiError, type ChatMessage, type StreamHandle } from '../ai/anthropicClient';
+import {
+  streamChat,
+  describeAiError,
+  type ChatMessage,
+  type StreamHandle,
+} from '../ai/anthropicClient';
 import { buildSystemPrompt, buildUserMessage } from '../ai/promptBuilder';
 import { extractCodeBlocks, mergeBasicLines } from '../ai/codeExtractor';
 import { getApiKey } from '../storage/settings';
@@ -78,9 +83,13 @@ export function AiPanel() {
       });
     } catch (e) {
       setError(describeAiError(e));
-      setMessages((m) => m.filter((msg) => !(msg.streaming && msg.content === '')));
       setMessages((m) =>
-        m.map((msg) => (msg.streaming ? { role: msg.role, content: msg.content } : msg)),
+        m.filter((msg) => !(msg.streaming && msg.content === '')),
+      );
+      setMessages((m) =>
+        m.map((msg) =>
+          msg.streaming ? { role: msg.role, content: msg.content } : msg,
+        ),
       );
     } finally {
       streamRef.current = null;
@@ -122,10 +131,16 @@ export function AiPanel() {
         <div key={`c${bi}`} className="ai-code">
           <pre>{block.code}</pre>
           <div className="ai-code-actions">
-            <button onClick={() => applyReplace(block.code)} title="Replace the whole program">
+            <button
+              onClick={() => applyReplace(block.code)}
+              title="Replace the whole program"
+            >
               Replace program
             </button>
-            <button onClick={() => applyMerge(block.code)} title="Merge by BASIC line number">
+            <button
+              onClick={() => applyMerge(block.code)}
+              title="Merge by BASIC line number"
+            >
               Merge lines
             </button>
             <button
@@ -142,7 +157,8 @@ export function AiPanel() {
     });
     const tail = rest.trim();
     if (tail) parts.push(<p key="tail">{tail}</p>);
-    if (parts.length === 0 && msg.streaming) parts.push(<p key="thinking">…</p>);
+    if (parts.length === 0 && msg.streaming)
+      parts.push(<p key="thinking">…</p>);
     return (
       <div key={idx} className="ai-msg ai-assistant">
         {parts}
@@ -162,8 +178,8 @@ export function AiPanel() {
         {messages.length === 0 && (
           <div className="ai-hint">
             Ask for a game and it lands in your editor. Try:
-            <em> “write a breakout game”</em>, <em>“make the paddle faster”</em>,
-            <em> “fix the errors”</em>.
+            <em> “write a breakout game”</em>, <em>“make the paddle faster”</em>
+            ,<em> “fix the errors”</em>.
           </div>
         )}
         {messages.map(renderMessage)}

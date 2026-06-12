@@ -12,7 +12,8 @@ export class Zx81Memory {
   private readonly ramMask: number;
 
   constructor(rom: Uint8Array, ramKb: 16 | 32 | 64) {
-    if (rom.length !== 8192) throw new Error(`ZX81 ROM must be 8192 bytes, got ${rom.length}`);
+    if (rom.length !== 8192)
+      throw new Error(`ZX81 ROM must be 8192 bytes, got ${rom.length}`);
     this.rom = rom;
     this.ram = new Uint8Array(ramKb * 1024);
     this.ramMask = ramKb * 1024 - 1;

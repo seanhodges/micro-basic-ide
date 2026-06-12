@@ -17,7 +17,9 @@ describe('encodeZxFloat', () => {
   });
 
   it('round-trips assorted values', () => {
-    for (const n of [1, -1, 0.1, 3.14159265, 9999, 16514, 0.001, 1e10, -42.5, 65535]) {
+    for (const n of [
+      1, -1, 0.1, 3.14159265, 9999, 16514, 0.001, 1e10, -42.5, 65535,
+    ]) {
       const decoded = decodeZxFloat(encodeZxFloat(n));
       expect(Math.abs(decoded - n)).toBeLessThanOrEqual(Math.abs(n) * 2 ** -31);
     }

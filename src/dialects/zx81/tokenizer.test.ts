@@ -14,13 +14,19 @@ describe('tokenizeProgram', () => {
     const { bytes, errors } = tokenizeProgram('10 PRINT "HELLO"\n');
     expect(errors).toEqual([]);
     expect(Array.from(bytes)).toEqual([
-      0x00, 0x0a,             // line 10, big-endian
-      0x09, 0x00,             // length 9, little-endian (body 8 + NEWLINE)
-      0xf5,                   // PRINT
-      0x0b,                   // "
-      0x2d, 0x2a, 0x31, 0x31, 0x34, // H E L L O
-      0x0b,                   // "
-      0x76,                   // NEWLINE
+      0x00,
+      0x0a, // line 10, big-endian
+      0x09,
+      0x00, // length 9, little-endian (body 8 + NEWLINE)
+      0xf5, // PRINT
+      0x0b, // "
+      0x2d,
+      0x2a,
+      0x31,
+      0x31,
+      0x34, // H E L L O
+      0x0b, // "
+      0x76, // NEWLINE
     ]);
   });
 
@@ -28,17 +34,27 @@ describe('tokenizeProgram', () => {
     const { bytes, errors } = tokenizeProgram('10 GOTO 10\n');
     expect(errors).toEqual([]);
     expect(Array.from(bytes)).toEqual([
-      0x00, 0x0a,
-      0x0a, 0x00,             // GOTO + "10" + 0x7E + 5 float bytes + NEWLINE = 10
-      0xec,                   // GOTO
-      0x1d, 0x1c,             // "1" "0"
-      0x7e, 0x84, 0x20, 0x00, 0x00, 0x00, // marker + float 10
+      0x00,
+      0x0a,
+      0x0a,
+      0x00, // GOTO + "10" + 0x7E + 5 float bytes + NEWLINE = 10
+      0xec, // GOTO
+      0x1d,
+      0x1c, // "1" "0"
+      0x7e,
+      0x84,
+      0x20,
+      0x00,
+      0x00,
+      0x00, // marker + float 10
       0x76,
     ]);
   });
 
   it('does not tokenize keywords inside strings or REM', () => {
-    const { bytes, errors } = tokenizeProgram('10 PRINT "STOP"\n20 REM RUN FOR FUN\n');
+    const { bytes, errors } = tokenizeProgram(
+      '10 PRINT "STOP"\n20 REM RUN FOR FUN\n',
+    );
     expect(errors).toEqual([]);
     const arr = Array.from(bytes);
     expect(arr).not.toContain(0xe3); // STOP token

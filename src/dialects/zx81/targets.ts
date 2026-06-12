@@ -9,7 +9,9 @@ export const CASSETTE_SAMPLE_RATE = 44100;
 function buildImageOrThrow(source: string): Uint8Array {
   const { bytes, errors } = tokenizeProgram(source);
   if (errors.length > 0) {
-    throw new Error(`Program has ${errors.length} error(s) — fix them before building`);
+    throw new Error(
+      `Program has ${errors.length} error(s) — fix them before building`,
+    );
   }
   if (bytes.length === 0) {
     throw new Error('Program is empty');
@@ -53,7 +55,10 @@ export const zx81BuildTargets: BuildTarget[] = [
     fileExtension: 'wav',
     build: (source, { programName }) =>
       Promise.resolve(
-        samplesToWav(buildCassetteSamples(source, programName), CASSETTE_SAMPLE_RATE),
+        samplesToWav(
+          buildCassetteSamples(source, programName),
+          CASSETTE_SAMPLE_RATE,
+        ),
       ),
   },
 ];

@@ -9,7 +9,10 @@ export interface AudioPlayback {
  * Play cassette samples through the speakers. Must be called from a user
  * gesture (browser autoplay policy).
  */
-export function playSamples(samples: Float32Array, sampleRate: number): AudioPlayback {
+export function playSamples(
+  samples: Float32Array,
+  sampleRate: number,
+): AudioPlayback {
   const ctx = new AudioContext({ sampleRate });
   const buffer = ctx.createBuffer(1, samples.length, sampleRate);
   buffer.getChannelData(0).set(samples);

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { crc32, buildHeader, splitBlocks, MAGIC, CMD_LOAD_P, BLOCK_SIZE } from './protocol';
+import {
+  crc32,
+  buildHeader,
+  splitBlocks,
+  MAGIC,
+  CMD_LOAD_P,
+  BLOCK_SIZE,
+} from './protocol';
 
 describe('crc32', () => {
   it('matches known vectors', () => {
@@ -29,7 +36,10 @@ describe('splitBlocks', () => {
     for (const block of blocks) {
       const wire = block.wire;
       expect(wire.length).toBe(block.data.length + 4);
-      const crc = new DataView(wire.buffer, wire.byteOffset).getUint32(block.data.length, true);
+      const crc = new DataView(wire.buffer, wire.byteOffset).getUint32(
+        block.data.length,
+        true,
+      );
       expect(crc).toBe(crc32(block.data));
     }
   });

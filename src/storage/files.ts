@@ -15,11 +15,18 @@ interface FilePickerWindow extends Window {
 
 const w = window as FilePickerWindow;
 
-export async function openTextFile(accept = '.bas,.txt'): Promise<OpenedFile | null> {
+export async function openTextFile(
+  accept = '.bas,.txt',
+): Promise<OpenedFile | null> {
   if (w.showOpenFilePicker) {
     try {
       const [handle] = await w.showOpenFilePicker({
-        types: [{ description: 'BASIC source', accept: { 'text/plain': ['.bas', '.txt'] } }],
+        types: [
+          {
+            description: 'BASIC source',
+            accept: { 'text/plain': ['.bas', '.txt'] },
+          },
+        ],
       });
       if (!handle) return null;
       const file = await handle.getFile();
@@ -29,18 +36,31 @@ export async function openTextFile(accept = '.bas,.txt'): Promise<OpenedFile | n
       throw e;
     }
   }
-  return openViaInput(accept, async (file) => ({ name: file.name, text: await file.text() }));
+  return openViaInput(accept, async (file) => ({
+    name: file.name,
+    text: await file.text(),
+  }));
 }
 
-export async function openBinaryFile(accept = '.p'): Promise<{ name: string; bytes: Uint8Array } | null> {
+export async function openBinaryFile(
+  accept = '.p',
+): Promise<{ name: string; bytes: Uint8Array } | null> {
   if (w.showOpenFilePicker) {
     try {
       const [handle] = await w.showOpenFilePicker({
-        types: [{ description: 'ZX81 program', accept: { 'application/octet-stream': ['.p'] } }],
+        types: [
+          {
+            description: 'ZX81 program',
+            accept: { 'application/octet-stream': ['.p'] },
+          },
+        ],
       });
       if (!handle) return null;
       const file = await handle.getFile();
-      return { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) };
+      return {
+        name: file.name,
+        bytes: new Uint8Array(await file.arrayBuffer()),
+      };
     } catch (e) {
       if ((e as Error).name === 'AbortError') return null;
       throw e;
@@ -52,7 +72,10 @@ export async function openBinaryFile(accept = '.p'): Promise<{ name: string; byt
   }));
 }
 
-function openViaInput<T>(accept: string, read: (file: File) => Promise<T>): Promise<T | null> {
+function openViaInput<T>(
+  accept: string,
+  read: (file: File) => Promise<T>,
+): Promise<T | null> {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -68,12 +91,17 @@ function openViaInput<T>(accept: string, read: (file: File) => Promise<T>): Prom
   });
 }
 
-export async function saveTextFile(name: string, text: string): Promise<string | null> {
+export async function saveTextFile(
+  name: string,
+  text: string,
+): Promise<string | null> {
   if (w.showSaveFilePicker) {
     try {
       const handle = await w.showSaveFilePicker({
         suggestedName: name,
-        types: [{ description: 'BASIC source', accept: { 'text/plain': ['.bas'] } }],
+        types: [
+          { description: 'BASIC source', accept: { 'text/plain': ['.bas'] } },
+        ],
       });
       const writable = await handle.createWritable();
       await writable.write(text);

@@ -22,32 +22,58 @@ describe('parseLines', () => {
 
 describe('computeNewLineNumber', () => {
   it('starts an empty file at the increment', () => {
-    expect(computeNewLineNumber(null, null, 10)).toEqual({ lineNo: 10, makeSpace: false });
-    expect(computeNewLineNumber(null, null, 100)).toEqual({ lineNo: 100, makeSpace: false });
+    expect(computeNewLineNumber(null, null, 10)).toEqual({
+      lineNo: 10,
+      makeSpace: false,
+    });
+    expect(computeNewLineNumber(null, null, 100)).toEqual({
+      lineNo: 100,
+      makeSpace: false,
+    });
   });
 
   it('appends at the end of file', () => {
-    expect(computeNewLineNumber(20, null, 10)).toEqual({ lineNo: 30, makeSpace: false });
+    expect(computeNewLineNumber(20, null, 10)).toEqual({
+      lineNo: 30,
+      makeSpace: false,
+    });
   });
 
   it('uses the rounded-down midpoint between two lines', () => {
-    expect(computeNewLineNumber(10, 15, 10)).toEqual({ lineNo: 12, makeSpace: false });
+    expect(computeNewLineNumber(10, 15, 10)).toEqual({
+      lineNo: 12,
+      makeSpace: false,
+    });
   });
 
   it('signals makeSpace when adjacent lines leave no gap', () => {
-    expect(computeNewLineNumber(12, 13, 10)).toEqual({ lineNo: 13, makeSpace: true });
+    expect(computeNewLineNumber(12, 13, 10)).toEqual({
+      lineNo: 13,
+      makeSpace: true,
+    });
   });
 
   it('handles inserting at the top of the file', () => {
-    expect(computeNewLineNumber(null, 20, 10)).toEqual({ lineNo: 10, makeSpace: false });
-    expect(computeNewLineNumber(null, 1, 10)).toEqual({ lineNo: 1, makeSpace: true });
+    expect(computeNewLineNumber(null, 20, 10)).toEqual({
+      lineNo: 10,
+      makeSpace: false,
+    });
+    expect(computeNewLineNumber(null, 1, 10)).toEqual({
+      lineNo: 1,
+      makeSpace: true,
+    });
   });
 });
 
 describe('makeSpace', () => {
   it('cascades a run of adjacent lines until a gap', () => {
     const lines = parseLines('10 A\n11 B\n12 C\n20 D');
-    expect(makeSpace(lines, 10, 10)).toEqual(new Map([[11, 12], [12, 13]]));
+    expect(makeSpace(lines, 10, 10)).toEqual(
+      new Map([
+        [11, 12],
+        [12, 13],
+      ]),
+    );
   });
 
   it('shifts only the single colliding line', () => {
@@ -63,20 +89,30 @@ describe('makeSpace', () => {
 
 describe('rewriteReferences', () => {
   it('rewrites GOTO and GOSUB targets', () => {
-    expect(rewriteReferences('20 GOTO 10', new Map([[10, 15]]))).toBe('20 GOTO 15');
-    expect(rewriteReferences('20 GOSUB 10', new Map([[10, 15]]))).toBe('20 GOSUB 15');
-  });
-
-  it('rewrites THEN GOTO / THEN GOSUB', () => {
-    expect(rewriteReferences('20 IF A=1 THEN GOTO 10', new Map([[10, 15]]))).toBe(
-      '20 IF A=1 THEN GOTO 15',
+    expect(rewriteReferences('20 GOTO 10', new Map([[10, 15]]))).toBe(
+      '20 GOTO 15',
+    );
+    expect(rewriteReferences('20 GOSUB 10', new Map([[10, 15]]))).toBe(
+      '20 GOSUB 15',
     );
   });
 
+  it('rewrites THEN GOTO / THEN GOSUB', () => {
+    expect(
+      rewriteReferences('20 IF A=1 THEN GOTO 10', new Map([[10, 15]])),
+    ).toBe('20 IF A=1 THEN GOTO 15');
+  });
+
   it('rewrites RUN / LIST / LLIST targets', () => {
-    expect(rewriteReferences('20 RUN 10', new Map([[10, 15]]))).toBe('20 RUN 15');
-    expect(rewriteReferences('20 LIST 10', new Map([[10, 15]]))).toBe('20 LIST 15');
-    expect(rewriteReferences('20 LLIST 10', new Map([[10, 15]]))).toBe('20 LLIST 15');
+    expect(rewriteReferences('20 RUN 10', new Map([[10, 15]]))).toBe(
+      '20 RUN 15',
+    );
+    expect(rewriteReferences('20 LIST 10', new Map([[10, 15]]))).toBe(
+      '20 LIST 15',
+    );
+    expect(rewriteReferences('20 LLIST 10', new Map([[10, 15]]))).toBe(
+      '20 LLIST 15',
+    );
   });
 
   it('leaves numbers inside strings untouched', () => {
@@ -86,18 +122,28 @@ describe('rewriteReferences', () => {
   });
 
   it('leaves REM comments untouched', () => {
-    expect(rewriteReferences('40 REM GOTO 10', new Map([[10, 15]]))).toBe('40 REM GOTO 10');
+    expect(rewriteReferences('40 REM GOTO 10', new Map([[10, 15]]))).toBe(
+      '40 REM GOTO 10',
+    );
   });
 
   it('leaves computed targets untouched', () => {
-    expect(rewriteReferences('50 GOTO X+1', new Map([[10, 15]]))).toBe('50 GOTO X+1');
+    expect(rewriteReferences('50 GOTO X+1', new Map([[10, 15]]))).toBe(
+      '50 GOTO X+1',
+    );
   });
 });
 
 describe('applyRenumberMap', () => {
   it('applies a cascade without double-applying', () => {
     const src = '10 A\n12 GOTO 13\n13 GOTO 12';
-    const result = applyRenumberMap(src, new Map([[12, 13], [13, 14]]));
+    const result = applyRenumberMap(
+      src,
+      new Map([
+        [12, 13],
+        [13, 14],
+      ]),
+    );
     expect(result).toBe('10 A\n13 GOTO 14\n14 GOTO 13');
   });
 });

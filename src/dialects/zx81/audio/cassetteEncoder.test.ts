@@ -42,7 +42,9 @@ describe('encodeCassette', () => {
     const zeroBit = Math.round(0.0025 * RATE); // 4*300us + 1300us = 2500us
     expect(countPulses(samples, leader, leader + oneBit)).toBe(9);
     // Second bit of 0xA6 is 0 -> 4 pulses
-    expect(countPulses(samples, leader + oneBit, leader + oneBit + zeroBit)).toBe(4);
+    expect(
+      countPulses(samples, leader + oneBit, leader + oneBit + zeroBit),
+    ).toBe(4);
   });
 
   it('produces ~300us pulses', () => {
@@ -63,7 +65,11 @@ describe('encodeCassette', () => {
 
   it('scales with the robust bit gap', () => {
     const data = Uint8Array.from([0x55, 0xaa, 0x00]);
-    const normal = encodeCassette('A', data, { sampleRate: RATE, leaderSeconds: 0, trailerSeconds: 0 });
+    const normal = encodeCassette('A', data, {
+      sampleRate: RATE,
+      leaderSeconds: 0,
+      trailerSeconds: 0,
+    });
     const robust = encodeCassette('A', data, {
       sampleRate: RATE,
       leaderSeconds: 0,

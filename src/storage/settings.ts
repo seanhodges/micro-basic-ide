@@ -75,7 +75,10 @@ export function setEmulatorSpeed(n: number): void {
 export function loadAutosave(): { name: string; text: string } | null {
   const text = localStorage.getItem(KEYS.autosaveDoc);
   if (text === null) return null;
-  return { name: localStorage.getItem(KEYS.autosaveName) ?? 'untitled.bas', text };
+  return {
+    name: localStorage.getItem(KEYS.autosaveName) ?? 'untitled.bas',
+    text,
+  };
 }
 
 export function saveAutosave(name: string, text: string): void {

@@ -1,4 +1,11 @@
-import { ACK, NAK, EOT, buildHeader, splitBlocks, CMD_LOAD_P } from './protocol';
+import {
+  ACK,
+  NAK,
+  EOT,
+  buildHeader,
+  splitBlocks,
+  CMD_LOAD_P,
+} from './protocol';
 
 export function webSerialSupported(): boolean {
   return typeof navigator !== 'undefined' && 'serial' in navigator;
@@ -22,7 +29,9 @@ export async function sendOverSerial(
   onProgress?: (p: SerialProgress) => void,
 ): Promise<void> {
   if (!webSerialSupported()) {
-    throw new Error('WebSerial is not supported in this browser (try Chrome or Edge)');
+    throw new Error(
+      'WebSerial is not supported in this browser (try Chrome or Edge)',
+    );
   }
   const port = await navigator.serial.requestPort();
   await port.open({ baudRate: 115200 });
@@ -36,7 +45,10 @@ export async function sendOverSerial(
       const result = await Promise.race([
         reader.read(),
         new Promise<{ value: undefined; done: false }>((resolve) =>
-          setTimeout(() => resolve({ value: undefined, done: false }), deadline - Date.now()),
+          setTimeout(
+            () => resolve({ value: undefined, done: false }),
+            deadline - Date.now(),
+          ),
         ),
       ]);
       if (result.done) throw new Error('Serial port closed by device');

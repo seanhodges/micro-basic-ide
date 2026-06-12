@@ -115,7 +115,10 @@ export function rewriteReferences(
 }
 
 /** Rewrite references within a single physical line, skipping strings/REM. */
-function rewriteLineReferences(line: string, remap: Map<number, number>): string {
+function rewriteLineReferences(
+  line: string,
+  remap: Map<number, number>,
+): string {
   const refRe = new RegExp(`(${REF_KEYWORDS.join('|')})(\\s*)(\\d+)`, 'gi');
   let out = '';
   let i = 0;
@@ -178,7 +181,11 @@ export function applyRenumberMap(
  * it, then re-sorting the program into ascending order. No-op if `oldNo` is
  * absent or `oldNo === newNo`.
  */
-export function renumberLine(source: string, oldNo: number, newNo: number): string {
+export function renumberLine(
+  source: string,
+  oldNo: number,
+  newNo: number,
+): string {
   if (oldNo === newNo) return source;
   const lines = parseLines(source);
   if (!lines.some((l) => l.lineNo === oldNo)) return source;
@@ -193,7 +200,9 @@ export function renumberLine(source: string, oldNo: number, newNo: number): stri
 /** Re-emit parsed lines as "<lineNo> <body>", sorted ascending by number. */
 function joinLines(lines: BasicLine[]): string {
   const sorted = [...lines].sort((a, b) => a.lineNo - b.lineNo);
-  return sorted.map((l) => (l.body === '' ? `${l.lineNo}` : `${l.lineNo} ${l.body}`)).join('\n');
+  return sorted
+    .map((l) => (l.body === '' ? `${l.lineNo}` : `${l.lineNo} ${l.body}`))
+    .join('\n');
 }
 
 /** Leading line number of a physical line, or null if it has none. */
@@ -203,19 +212,28 @@ function lineNumberOf(physical: string): number | null {
 }
 
 /** Nearest numbered lines immediately above and below physical index `idx`. */
-function neighbours(physical: string[], idx: number): {
+function neighbours(
+  physical: string[],
+  idx: number,
+): {
   prev: number | null;
   next: number | null;
 } {
   let prev: number | null = null;
   for (let i = idx - 1; i >= 0; i--) {
     const n = lineNumberOf(physical[i]!);
-    if (n !== null) { prev = n; break; }
+    if (n !== null) {
+      prev = n;
+      break;
+    }
   }
   let next: number | null = null;
   for (let i = idx + 1; i < physical.length; i++) {
     const n = lineNumberOf(physical[i]!);
-    if (n !== null) { next = n; break; }
+    if (n !== null) {
+      next = n;
+      break;
+    }
   }
   return { prev, next };
 }
@@ -226,7 +244,10 @@ function neighbours(physical: string[], idx: number): {
  * each numbered line's own prefix and any references, against the original
  * numbers in a single pass.
  */
-function applyMapToPhysical(physical: string[], map: Map<number, number>): string[] {
+function applyMapToPhysical(
+  physical: string[],
+  map: Map<number, number>,
+): string[] {
   return physical.map((raw) => {
     const refd = rewriteReferences(raw, map);
     const m = /^(\s*)(\d+)(\s?)([\s\S]*)$/.exec(refd);

@@ -15,7 +15,9 @@ export function buildBasicLanguage(
   keywords: KeywordInfo[],
   completionSource: CompletionSource,
 ): LanguageSupport {
-  const words = new Set(keywords.map((k) => k.word).filter((w) => /^[A-Z]/.test(w)));
+  const words = new Set(
+    keywords.map((k) => k.word).filter((w) => /^[A-Z]/.test(w)),
+  );
   const maxWordLen = Math.max(...[...words].map((w) => w.length));
 
   const language = StreamLanguage.define<BasicStreamState>({

@@ -1,5 +1,11 @@
 import { CharsetError, type TokenizeError } from '../types';
-import { parseChar, NEWLINE, NUMBER_MARKER, QUOTE, QUOTE_IMAGE } from './charset';
+import {
+  parseChar,
+  NEWLINE,
+  NUMBER_MARKER,
+  QUOTE,
+  QUOTE_IMAGE,
+} from './charset';
 import { keywordsByLength, statementKeywords } from './keywords';
 import { encodeZxFloat } from './zxfloat';
 
@@ -30,16 +36,28 @@ export function tokenizeProgram(source: string): TokenizedProgram {
 
     const m = /^(\d+)\s?/.exec(text);
     if (!m) {
-      errors.push({ line: editorLine, column: 0, message: 'Missing line number' });
+      errors.push({
+        line: editorLine,
+        column: 0,
+        message: 'Missing line number',
+      });
       continue;
     }
     const lineNo = parseInt(m[1]!, 10);
     if (lineNo < 1 || lineNo > 9999) {
-      errors.push({ line: editorLine, column: 0, message: `Line number ${lineNo} out of range 1-9999` });
+      errors.push({
+        line: editorLine,
+        column: 0,
+        message: `Line number ${lineNo} out of range 1-9999`,
+      });
       continue;
     }
     if (lineNo <= prevLineNo) {
-      errors.push({ line: editorLine, column: 0, message: `Line number ${lineNo} not greater than previous line ${prevLineNo}` });
+      errors.push({
+        line: editorLine,
+        column: 0,
+        message: `Line number ${lineNo} not greater than previous line ${prevLineNo}`,
+      });
       continue;
     }
 
@@ -122,13 +140,21 @@ function tokenizeBody(
         // Word keyword: must not be glued into a longer identifier,
         // unless it carries its own $ suffix (STR$, CHR$, INKEY$).
         const next = upper[i + kw.word.length];
-        if (!kw.word.endsWith('$') && next !== undefined && IDENT_CHAR.test(next)) continue;
+        if (
+          !kw.word.endsWith('$') &&
+          next !== undefined &&
+          IDENT_CHAR.test(next)
+        )
+          continue;
         // ...and must not continue a preceding identifier (e.g. the TO in ATOL).
         if (/[A-Z0-9$]/.test(prevSignificant)) continue;
       }
       if (!firstWordChecked) {
         if (!statementKeywords.has(kw.word)) {
-          return fail(`Line must start with a statement keyword (got ${kw.word})`, i);
+          return fail(
+            `Line must start with a statement keyword (got ${kw.word})`,
+            i,
+          );
         }
         firstWordChecked = true;
       }
@@ -158,7 +184,10 @@ function tokenizeBody(
     if (matched) continue;
 
     if (!firstWordChecked) {
-      return fail('Line must start with a statement keyword (e.g. LET, PRINT, IF…)', i);
+      return fail(
+        'Line must start with a statement keyword (e.g. LET, PRINT, IF…)',
+        i,
+      );
     }
 
     // Numeric literal: digits not continuing an identifier get the inline

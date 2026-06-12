@@ -5,7 +5,6 @@ import { Zx81Machine } from './zx81Machine';
 import { tokenizeProgram } from '../tokenizer';
 import { buildPFile } from '../pfile';
 import { D_FILE } from '../sysvars';
-import { NEWLINE } from '../charset';
 
 const rom = new Uint8Array(
   readFileSync(join(__dirname, '../../../../public/roms/zx81.rom')),

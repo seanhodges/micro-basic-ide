@@ -1,4 +1,10 @@
-import { zx81Charset, NEWLINE, NUMBER_MARKER, QUOTE, QUOTE_IMAGE } from './charset';
+import {
+  zx81Charset,
+  NEWLINE,
+  NUMBER_MARKER,
+  QUOTE,
+  QUOTE_IMAGE,
+} from './charset';
 import { keywordByToken } from './keywords';
 
 const WORDLIKE = /[A-Z0-9$"%▘▝▀▖▌▞▛▒█▟▙▄▜▐▚▗\\]/;
@@ -29,7 +35,10 @@ export function detokenizeProgram(program: Uint8Array): string {
       const lastChar = text[text.length - 1]!;
       const needsGap =
         (pendingBoundary && wordlike) ||
-        (wordlike && /^[A-Z]/.test(s) && WORDLIKE.test(lastChar) && s.length > 1);
+        (wordlike &&
+          /^[A-Z]/.test(s) &&
+          WORDLIKE.test(lastChar) &&
+          s.length > 1);
       if (needsGap && lastChar !== ' ') text += ' ';
       text += s;
       pendingBoundary = false;

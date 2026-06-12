@@ -88,8 +88,10 @@ export const useIdeStore = create<IdeState>((set) => ({
   aiPanelOpen: false,
   transferOpen: false,
   settingsOpen: false,
-  autoLineNumbering: typeof localStorage !== 'undefined' ? getAutoLineNumbering() : true,
-  lineNumberIncrement: typeof localStorage !== 'undefined' ? getLineNumberIncrement() : 10,
+  autoLineNumbering:
+    typeof localStorage !== 'undefined' ? getAutoLineNumbering() : true,
+  lineNumberIncrement:
+    typeof localStorage !== 'undefined' ? getLineNumberIncrement() : 10,
   renumberRequest: 0,
 
   setSource: (text) => set({ source: text, dirty: true }),
@@ -126,5 +128,6 @@ export const useIdeStore = create<IdeState>((set) => ({
     persistLineNumberIncrement(n);
     set({ lineNumberIncrement: n });
   },
-  requestRenumber: () => set((s) => ({ renumberRequest: s.renumberRequest + 1 })),
+  requestRenumber: () =>
+    set((s) => ({ renumberRequest: s.renumberRequest + 1 })),
 }));

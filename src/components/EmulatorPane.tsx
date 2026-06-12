@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIdeStore } from '../app/store';
 import { useMediaQuery, MOBILE_QUERY } from '../app/useMediaQuery';
-import { computeIntegerScale, SCREEN_WIDTH, SCREEN_HEIGHT } from '../app/screenScale';
+import {
+  computeIntegerScale,
+  SCREEN_WIDTH,
+  SCREEN_HEIGHT,
+} from '../app/screenScale';
 import type { MachineEmulator } from '../dialects/types';
 
 const romCache = new Map<string, Promise<Uint8Array>>();
@@ -133,11 +137,14 @@ export function EmulatorPane() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetRequest]);
 
-  useEffect(() => () => {
-    stopLoop();
-    machineRef.current?.dispose();
-    machineRef.current = null;
-  }, [stopLoop]);
+  useEffect(
+    () => () => {
+      stopLoop();
+      machineRef.current?.dispose();
+      machineRef.current = null;
+    },
+    [stopLoop],
+  );
 
   useEffect(() => {
     machineRef.current?.setSpeed(speed);
@@ -152,7 +159,10 @@ export function EmulatorPane() {
     const update = () => {
       const rect = container.getBoundingClientRect();
       setScale(
-        computeIntegerScale(rect.width - 2 * MOBILE_BEZEL, rect.height - 2 * MOBILE_BEZEL),
+        computeIntegerScale(
+          rect.width - 2 * MOBILE_BEZEL,
+          rect.height - 2 * MOBILE_BEZEL,
+        ),
       );
     };
     update();
@@ -174,7 +184,9 @@ export function EmulatorPane() {
 
   return (
     <div className="emulator-pane" ref={containerRef}>
-      <div className={`screen-shell ${crtEffect ? 'crt' : ''} ${focused ? 'focused' : ''}`}>
+      <div
+        className={`screen-shell ${crtEffect ? 'crt' : ''} ${focused ? 'focused' : ''}`}
+      >
         <canvas
           ref={canvasRef}
           width={SCREEN_WIDTH}

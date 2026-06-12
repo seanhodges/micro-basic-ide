@@ -8,11 +8,23 @@ import {
   highlightActiveLineGutter,
   drawSelection,
 } from '@codemirror/view';
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import { autocompletion, completionKeymap, completionStatus } from '@codemirror/autocomplete';
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab,
+} from '@codemirror/commands';
+import {
+  autocompletion,
+  completionKeymap,
+  completionStatus,
+} from '@codemirror/autocomplete';
 import { lintGutter, lintKeymap } from '@codemirror/lint';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
-import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+import {
+  syntaxHighlighting,
+  defaultHighlightStyle,
+} from '@codemirror/language';
 import type { Dialect } from '../dialects/types';
 import { dialectLinter } from '../editor/lintIntegration';
 import { useIdeStore } from '../app/store';
@@ -25,7 +37,11 @@ import {
 } from '../editor/lineNumbering';
 
 /** Replace the whole document and drop the cursor at the end of `cursorLine`. */
-function replaceDoc(view: EditorView, lines: string[], cursorLine: number): void {
+function replaceDoc(
+  view: EditorView,
+  lines: string[],
+  cursorLine: number,
+): void {
   const text = lines.join('\n');
   const anchor = lines.slice(0, cursorLine + 1).join('\n').length;
   view.dispatch({
@@ -48,7 +64,11 @@ function autoNumberOnEnter(view: EditorView): boolean {
   if (sel.head !== line.to) return false; // only at end of line — else split normally
 
   const physical = state.doc.toString().split('\n');
-  const result = insertNumberedLineBelow(physical, line.number - 1, lineNumberIncrement);
+  const result = insertNumberedLineBelow(
+    physical,
+    line.number - 1,
+    lineNumberIncrement,
+  );
   if (!result) return false; // nothing to number — fall back to default newline
   replaceDoc(view, result.lines, result.cursorLine);
   return true;
@@ -66,7 +86,9 @@ function renumberCurrentLine(view: EditorView): boolean {
   if (input === null) return true; // cancelled — but the key was ours
   const newNo = parseInt(input.trim(), 10);
   if (!Number.isInteger(newNo) || newNo < MIN_LINE_NO || newNo > MAX_LINE_NO) {
-    window.alert(`Line number must be an integer between ${MIN_LINE_NO} and ${MAX_LINE_NO}.`);
+    window.alert(
+      `Line number must be an integer between ${MIN_LINE_NO} and ${MAX_LINE_NO}.`,
+    );
     return true;
   }
   if (newNo === oldNo) return true;
@@ -77,7 +99,9 @@ function renumberCurrentLine(view: EditorView): boolean {
   }
 
   const newLines = renumberLine(docText, oldNo, newNo).split('\n');
-  const ci = newLines.findIndex((l) => new RegExp(`^\\s*${newNo}(\\s|$)`).test(l));
+  const ci = newLines.findIndex((l) =>
+    new RegExp(`^\\s*${newNo}(\\s|$)`).test(l),
+  );
   replaceDoc(view, newLines, ci < 0 ? newLines.length - 1 : ci);
   view.focus();
   return true;
@@ -130,11 +154,14 @@ export function CodeMirrorHost({ dialect, override, onChange }: Props) {
           indentWithTab,
         ]),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) onChangeRef.current(update.state.doc.toString());
+          if (update.docChanged)
+            onChangeRef.current(update.state.doc.toString());
         }),
         EditorView.theme({
           '&': { height: '100%', fontSize: '14px' },
-          '.cm-scroller': { fontFamily: "'IBM Plex Mono', 'Fira Mono', monospace" },
+          '.cm-scroller': {
+            fontFamily: "'IBM Plex Mono', 'Fira Mono', monospace",
+          },
         }),
       ],
     });

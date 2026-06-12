@@ -28,7 +28,9 @@ describe('zx81Charset', () => {
     expect(Array.from(zx81Charset.toMachine('█▟▙▄▜▐▚▗'))).toEqual([
       0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
     ]);
-    expect(Array.from(zx81Charset.toMachine("\\' \\::\\!.")) ).toEqual([0x01, 0x80, 0x0a]);
+    expect(Array.from(zx81Charset.toMachine("\\' \\::\\!."))).toEqual([
+      0x01, 0x80, 0x0a,
+    ]);
   });
 
   it('handles inverse video via % prefix', () => {

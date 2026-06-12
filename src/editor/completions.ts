@@ -7,12 +7,19 @@ import type {
 import type { KeywordInfo } from '../dialects/types';
 
 /** Build an autocomplete source from a dialect's keyword table. */
-export function buildCompletionSource(keywords: KeywordInfo[]): CompletionSource {
+export function buildCompletionSource(
+  keywords: KeywordInfo[],
+): CompletionSource {
   const options: Completion[] = keywords
     .filter((k) => /^[A-Z]/.test(k.word))
     .map((k) => ({
       label: k.word,
-      type: k.kind === 'command' ? 'keyword' : k.kind === 'function' ? 'function' : 'operator',
+      type:
+        k.kind === 'command'
+          ? 'keyword'
+          : k.kind === 'function'
+            ? 'function'
+            : 'operator',
       detail: k.signature,
       info: k.doc,
       boost: k.kind === 'command' ? 1 : 0,

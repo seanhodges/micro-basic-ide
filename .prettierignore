@@ -1,0 +1,5 @@
+dist/
+public/roms/
+src/emulator/z80/
+src/samples/
+package-lock.json

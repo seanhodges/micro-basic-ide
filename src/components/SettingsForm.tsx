@@ -67,8 +67,8 @@ export function SettingsForm() {
       </label>
       <h3>AI</h3>
       <p>
-        Code generation calls the Claude API directly from your browser.
-        Create an API key at{' '}
+        Code generation calls the Claude API directly from your browser. Create
+        an API key at{' '}
         <a href="https://platform.claude.com/" target="_blank" rel="noreferrer">
           platform.claude.com
         </a>
@@ -84,8 +84,8 @@ export function SettingsForm() {
         />
       </label>
       <p className="modal-warning">
-        The key is stored only in this browser&apos;s localStorage and sent only to
-        api.anthropic.com. Don&apos;t use this on a shared computer.
+        The key is stored only in this browser&apos;s localStorage and sent only
+        to api.anthropic.com. Don&apos;t use this on a shared computer.
       </p>
       <div className="modal-actions left">
         <button className="primary" onClick={saveKey}>
