@@ -1,8 +1,10 @@
 import { create } from 'zustand';
-import { getDialect } from '../dialects/registry';
+import { getDialect, dialects } from '../dialects/registry';
 import type { Dialect } from '../dialects/types';
 import {
   loadAutosave,
+  getDialectId,
+  setDialectId as persistDialectId,
   getAutoLineNumbering,
   getLineNumberIncrement,
   getCrtEffect,
@@ -25,6 +27,7 @@ export type EmulatorStatus = 'stopped' | 'running';
 export type MobileTab = 'editor' | 'preview' | 'settings' | 'ai';
 
 interface IdeState {
+  /** Active target machine. Switching it rebuilds the editor, emulator and keyboard. */
   dialect: Dialect;
   fileName: string;
   /** Mirror of the editor document (editor itself is the source of truth). */
@@ -65,6 +68,7 @@ interface IdeState {
   /** Bumped to ask the editor to renumber the current line. */
   renumberRequest: number;
 
+  setDialect(id: string): void;
   setSource(text: string): void;
   replaceDocument(text: string, fileName?: string): void;
   markSaved(fileName: string): void;
@@ -90,6 +94,15 @@ interface IdeState {
 
 const autosaved = typeof localStorage !== 'undefined' ? loadAutosave() : null;
 
+/** The persisted dialect if it still exists in the registry, else the first one. */
+function initialDialect(): Dialect {
+  const savedId = typeof localStorage !== 'undefined' ? getDialectId() : null;
+  if (savedId && dialects.some((d) => d.id === savedId)) {
+    return getDialect(savedId);
+  }
+  return dialects[0]!;
+}
+
 /** Default the virtual keyboard to shown on touch/small-screen devices. */
 function defaultVirtualKeyboard(): boolean {
   if (typeof window === 'undefined') return false;
@@ -99,7 +112,7 @@ function defaultVirtualKeyboard(): boolean {
 }
 
 export const useIdeStore = create<IdeState>((set) => ({
-  dialect: getDialect('zx81'),
+  dialect: initialDialect(),
   fileName: autosaved?.name ?? 'untitled.bas',
   source: autosaved?.text ?? '',
   docOverride: { text: autosaved?.text ?? '', seq: 0 },
@@ -130,6 +143,14 @@ export const useIdeStore = create<IdeState>((set) => ({
     typeof localStorage !== 'undefined' ? getLineNumberIncrement() : 10,
   renumberRequest: 0,
 
+  setDialect: (id) =>
+    set((s) => {
+      if (id === s.dialect.id) return {};
+      persistDialectId(id);
+      // The emulator pane tears down the old machine when `dialect` changes;
+      // mark it stopped so the UI reflects the switch immediately.
+      return { dialect: getDialect(id), emulatorStatus: 'stopped' };
+    }),
   setSource: (text) => set({ source: text, dirty: true }),
   replaceDocument: (text, fileName) =>
     set((s) => ({

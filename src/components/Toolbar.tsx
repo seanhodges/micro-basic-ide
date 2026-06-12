@@ -6,6 +6,7 @@ import { sampleFiles } from '../samples';
 
 export function Toolbar() {
   const dialect = useIdeStore((s) => s.dialect);
+  const setDialect = useIdeStore((s) => s.setDialect);
   const fileName = useIdeStore((s) => s.fileName);
   const source = useIdeStore((s) => s.source);
   const dirty = useIdeStore((s) => s.dirty);
@@ -130,9 +131,7 @@ export function Toolbar() {
         <select
           className="dialect-select"
           value={dialect.id}
-          onChange={() => {
-            /* single dialect for now */
-          }}
+          onChange={(e) => setDialect(e.target.value)}
           title="Target machine"
         >
           {dialects.map((d) => (

@@ -119,6 +119,18 @@ satisfies and the zx81 file to mirror.
   `src/styles.css`; the class must match the `theme` field in your
   `KeyboardLayout`.
 
+That is all a new dialect needs — the **target-machine dropdown** in
+`src/components/Toolbar.tsx` is generic: it lists every entry in `dialects[]`
+and calls `store.setDialect(id)`, which swaps the active `dialect` and persists
+it (`storage/settings.ts` `getDialectId`/`setDialectId`). Switching rebuilds the
+editor (`CodeMirrorHost` is keyed on `dialect`), tears down and rebuilds the
+emulator (`EmulatorPane` disposes its machine in a `dialect`-keyed effect), and
+re-renders the virtual keyboard from `dialect.keyboardLayout`. So once a dialect
+is registered it is immediately selectable and runnable — **do not re-wire the
+picker per dialect.** If you find the dropdown still shows only one machine,
+check the registry, not the UI. Keep new UI text dialect-driven (e.g.
+`dialect.name`), never a hard-coded machine name.
+
 ## Conventions (from CLAUDE.md)
 
 - **Strict TypeScript** — `noUnusedLocals` / `noUnusedParameters` /
