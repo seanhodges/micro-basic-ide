@@ -17,7 +17,7 @@ import { zx81Samples } from './samples';
 
 export const zx81: Dialect = {
   id: 'zx81',
-  name: 'ZX81 BASIC',
+  name: 'ZX81',
   fileExtensions: ['.bas'],
   keywords: zx81Keywords,
   charset: zx81Charset,

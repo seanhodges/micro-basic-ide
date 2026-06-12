@@ -26,7 +26,7 @@ import {
  */
 export const bbcmicro: Dialect = {
   id: 'bbcmicro',
-  name: 'BBC BASIC',
+  name: 'BBC Micro',
   fileExtensions: ['.bas'],
   keywords: bbcKeywords,
   charset: bbcCharset,
