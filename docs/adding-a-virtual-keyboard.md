@@ -24,13 +24,19 @@ Import the types from `src/keyboard/layoutSchema.ts`.
 import type { KeyboardLayout } from '../../keyboard/layoutSchema';
 
 export const myMachineKeyboardLayout: KeyboardLayout = {
-  id: 'mymachine',      // unique id
-  name: 'My Machine',   // shown in the UI
+  id: 'mymachine', // unique id
+  name: 'My Machine', // shown in the UI
   theme: 'vk-theme-mymachine', // CSS class on the keyboard root
-  gridColumns: 40,      // total grid units across one row (drives proportional key widths)
-  layers: [ /* ... */ ],
-  modifiers: [ /* ... */ ],
-  rows: [ /* ... */ ],
+  gridColumns: 40, // total grid units across one row (drives proportional key widths)
+  layers: [
+    /* ... */
+  ],
+  modifiers: [
+    /* ... */
+  ],
+  rows: [
+    /* ... */
+  ],
   glyphs: {},
   options: { minHoldFrames: 3 },
 };
@@ -180,12 +186,14 @@ const ROWS: string[][] = [
   // Address line A8:   bit0    bit1    bit2    bit3    bit4
   ['Shift', 'KeyZ', 'KeyX', 'KeyC', 'KeyV'],
   // Address line A9:
-  ['KeyA',  'KeyS', 'KeyD', 'KeyF', 'KeyG'],
+  ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG'],
   // ... etc.
 ];
 
 const keyPosition = new Map<string, { row: number; bit: number }>();
-ROWS.forEach((row, r) => row.forEach((code, b) => keyPosition.set(code, { row: r, bit: b })));
+ROWS.forEach((row, r) =>
+  row.forEach((code, b) => keyPosition.set(code, { row: r, bit: b })),
+);
 
 export class MyMachineKeyboard {
   private readonly matrix = new Uint8Array(ROWS.length);
@@ -200,7 +208,8 @@ export class MyMachineKeyboard {
   }
 
   handleKey(e: KeyboardEvent, down: boolean): boolean {
-    const code = e.code === 'ShiftLeft' || e.code === 'ShiftRight' ? 'Shift' : e.code;
+    const code =
+      e.code === 'ShiftLeft' || e.code === 'ShiftRight' ? 'Shift' : e.code;
     if (!keyPosition.has(code)) return false;
     if (down) this.physicalDown.add(code);
     else this.physicalDown.delete(code);
@@ -218,12 +227,14 @@ export class MyMachineKeyboard {
     const pos = keyPosition.get(code);
     if (!pos) return;
     const held = this.physicalDown.has(code) || this.virtualDown.has(code);
-    if (held) this.matrix[pos.row]! |= (1 << pos.bit);
-    else      this.matrix[pos.row]! &= ~(1 << pos.bit);
+    if (held) this.matrix[pos.row]! |= 1 << pos.bit;
+    else this.matrix[pos.row]! &= ~(1 << pos.bit);
   }
 
   // Your machine reads this in its port-read handler.
-  readMatrix(row: number): number { return this.matrix[row] ?? 0; }
+  readMatrix(row: number): number {
+    return this.matrix[row] ?? 0;
+  }
 }
 ```
 
@@ -262,7 +273,9 @@ import { myMachineKeyboardLayout } from './keyboardLayout';
 export const myMachine: Dialect = {
   // ...
   keyboardLayout: myMachineKeyboardLayout,
-  createEmulator(opts) { return new MyMachineEmulator(opts); },
+  createEmulator(opts) {
+    return new MyMachineEmulator(opts);
+  },
 };
 ```
 
@@ -328,10 +341,10 @@ and the physical+virtual key union behaviour (see
 
 ## Key files to reference
 
-| File | What it shows |
-|------|---------------|
-| `src/keyboard/layoutSchema.ts` | All type definitions |
-| `src/dialects/zx81/keyboardLayout.ts` | Full 5-layer, 4-editor-mode example |
-| `src/dialects/zx81/emulator/keyboard.ts` | 8×5 matrix + dual press-source pattern |
-| `src/keyboard/inputEngine.ts` | Frame-count hold, modifier state machine |
-| `src/keyboard/VirtualKeyboard.tsx` | React component (no changes needed) |
+| File                                     | What it shows                            |
+| ---------------------------------------- | ---------------------------------------- |
+| `src/keyboard/layoutSchema.ts`           | All type definitions                     |
+| `src/dialects/zx81/keyboardLayout.ts`    | Full 5-layer, 4-editor-mode example      |
+| `src/dialects/zx81/emulator/keyboard.ts` | 8×5 matrix + dual press-source pattern   |
+| `src/keyboard/inputEngine.ts`            | Frame-count hold, modifier state machine |
+| `src/keyboard/VirtualKeyboard.tsx`       | React component (no changes needed)      |
