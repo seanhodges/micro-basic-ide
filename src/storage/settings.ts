@@ -2,6 +2,7 @@ const KEYS = {
   apiKey: 'mbide.anthropicApiKey',
   autosaveDoc: 'mbide.autosave.doc',
   autosaveName: 'mbide.autosave.name',
+  dialectId: 'mbide.dialectId',
   autoLineNumbering: 'mbide.autoLineNumbering',
   lineNumberIncrement: 'mbide.lineNumberIncrement',
   crtEffect: 'mbide.crtEffect',
@@ -21,6 +22,15 @@ const EMULATOR_SPEEDS = [1, 2, 8];
 
 export function getApiKey(): string {
   return localStorage.getItem(KEYS.apiKey) ?? '';
+}
+
+/** Persisted target-machine dialect id, or null when never chosen. */
+export function getDialectId(): string | null {
+  return localStorage.getItem(KEYS.dialectId);
+}
+
+export function setDialectId(id: string): void {
+  localStorage.setItem(KEYS.dialectId, id);
 }
 
 export function setApiKey(key: string): void {

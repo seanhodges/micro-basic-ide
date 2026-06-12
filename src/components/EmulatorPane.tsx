@@ -157,6 +157,17 @@ export function EmulatorPane() {
     [stopLoop],
   );
 
+  // Switching target machine: dispose the old emulator so the next run builds a
+  // fresh one with the new dialect's ROM. The editor and virtual keyboard
+  // re-render from the new dialect on their own.
+  useEffect(() => {
+    stopLoop();
+    machineRef.current?.releaseAllKeys();
+    machineRef.current?.dispose();
+    machineRef.current = null;
+    setError('');
+  }, [dialect, stopLoop]);
+
   // Backgrounding pauses the rAF loop; clear the matrix so no key stays held.
   useEffect(() => {
     const onVisibility = () => {
@@ -241,7 +252,7 @@ export function EmulatorPane() {
         <span className={`emulator-state ${emulatorStatus}`}>
           {emulatorStatus === 'running'
             ? focused
-              ? 'running — keys go to ZX81 (Esc to release)'
+              ? `running — keys go to ${dialect.name} (Esc to release)`
               : virtualKeyboard
                 ? 'running — tap the keys below'
                 : 'running — click screen to type'

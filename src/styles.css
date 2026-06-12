@@ -1108,3 +1108,60 @@ code {
     font-size: 10px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   ZX Spectrum keyboard theme: grey rubber keys with the rainbow accent, red
+   SYMBOL SHIFT legends and green extended-mode functions. Activated by the
+   layout's `theme: 'vk-theme-zxspectrum'`. */
+.virtual-keyboard.vk-theme-zxspectrum {
+  background: #1b1b1f;
+  border-top: 3px solid;
+  border-image: linear-gradient(
+      90deg,
+      #d12d2d 0 25%,
+      #d1c52d 25% 50%,
+      #2dbf3c 50% 75%,
+      #2db5d1 75% 100%
+    )
+    1;
+}
+
+.vk-theme-zxspectrum .vk-keycap {
+  background: linear-gradient(#3a3a40, #2a2a2e);
+}
+
+/* CAPS SHIFT legend (top-left): the edit/cursor functions in cyan. */
+.vk-theme-zxspectrum .vk-pos-tl {
+  top: 4px;
+  left: 4px;
+  font-size: 8px;
+  color: #5fc4d6;
+}
+
+/* SYMBOL SHIFT symbols (top-right) in Spectrum red. */
+.vk-theme-zxspectrum .vk-pos-tr {
+  color: #ec6a6a;
+}
+
+/* K-mode keyword (bottom-left) in clean white. */
+.vk-theme-zxspectrum .vk-pos-bl {
+  color: #e8e8e8;
+}
+
+/* Extended-mode functions (below the key) in Spectrum green. */
+.vk-theme-zxspectrum .vk-pos-below {
+  color: #62c46f;
+}
+
+/* SYMBOL SHIFT key itself tinted red to match the legends. */
+.vk-theme-zxspectrum .vk-style-symshift .vk-pos-center {
+  inset: 0 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  color: #ec6a6a;
+}

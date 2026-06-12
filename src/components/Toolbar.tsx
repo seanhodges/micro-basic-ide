@@ -2,10 +2,10 @@ import { useRef, useState } from 'react';
 import { useIdeStore } from '../app/store';
 import { openTextFile, openBinaryFile, saveTextFile } from '../storage/files';
 import { dialects } from '../dialects/registry';
-import { sampleFiles } from '../samples';
 
 export function Toolbar() {
   const dialect = useIdeStore((s) => s.dialect);
+  const setDialect = useIdeStore((s) => s.setDialect);
   const fileName = useIdeStore((s) => s.fileName);
   const source = useIdeStore((s) => s.source);
   const dirty = useIdeStore((s) => s.dirty);
@@ -92,7 +92,7 @@ export function Toolbar() {
               </button>
               <div className="menu-separator" />
               <div className="menu-label">Samples</div>
-              {sampleFiles.map((s) => (
+              {dialect.samples.map((s) => (
                 <button key={s.name} onClick={() => loadSample(s.name, s.text)}>
                   {s.title}
                 </button>
@@ -130,9 +130,7 @@ export function Toolbar() {
         <select
           className="dialect-select"
           value={dialect.id}
-          onChange={() => {
-            /* single dialect for now */
-          }}
+          onChange={(e) => setDialect(e.target.value)}
           title="Target machine"
         >
           {dialects.map((d) => (

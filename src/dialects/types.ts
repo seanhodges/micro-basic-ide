@@ -91,6 +91,16 @@ export interface AiProfile {
   maxTokens: number;
 }
 
+/** A bundled example program for a dialect. */
+export interface SampleFile {
+  /** Suggested file name, e.g. "hello.bas". */
+  name: string;
+  /** Menu label. */
+  title: string;
+  /** Program source. */
+  text: string;
+}
+
 /**
  * Everything the IDE needs to support one BASIC dialect / machine.
  * The app only ever talks to this interface; machine specifics stay inside
@@ -117,6 +127,8 @@ export interface Dialect {
   }): MachineEmulator;
   /** On-screen keyboard: authentic layout, labels and theme as pure data. */
   keyboardLayout: KeyboardLayout;
+  /** Bundled example programs; the first is the starter shown for a fresh document. */
+  samples: SampleFile[];
   buildTargets: BuildTarget[];
   /** Cassette-audio loading support, when the machine loads from tape. */
   audio?: {

@@ -1,7 +1,8 @@
 import type { Dialect } from './types';
 import { zx81 } from './zx81';
+import { zxspectrum } from './zxspectrum';
 
-export const dialects: Dialect[] = [zx81];
+export const dialects: Dialect[] = [zx81, zxspectrum];
 
 export function getDialect(id: string): Dialect {
   const d = dialects.find((d) => d.id === id);

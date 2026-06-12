@@ -1,0 +1,10 @@
+10 REM BOUNCING BALL
+20 BORDER 5: PAPER 7: INK 0: CLS
+30 LET x=4: LET y=10: LET dx=1: LET dy=1
+40 PRINT AT y,x;" "
+50 LET x=x+dx: LET y=y+dy
+60 IF x<1 OR x>30 THEN LET dx=-dx
+70 IF y<1 OR y>20 THEN LET dy=-dy
+80 PRINT AT y,x; INK 2;"O"
+90 PAUSE 5
+100 GO TO 40

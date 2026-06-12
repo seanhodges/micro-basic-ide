@@ -1,8 +1,10 @@
 import { create } from 'zustand';
-import { getDialect } from '../dialects/registry';
+import { getDialect, dialects } from '../dialects/registry';
 import type { Dialect } from '../dialects/types';
 import {
   loadAutosave,
+  getDialectId,
+  setDialectId as persistDialectId,
   getAutoLineNumbering,
   getLineNumberIncrement,
   getCrtEffect,
@@ -25,6 +27,7 @@ export type EmulatorStatus = 'stopped' | 'running';
 export type MobileTab = 'editor' | 'preview' | 'settings' | 'ai';
 
 interface IdeState {
+  /** Active target machine. Switching it rebuilds the editor, emulator and keyboard. */
   dialect: Dialect;
   fileName: string;
   /** Mirror of the editor document (editor itself is the source of truth). */
@@ -65,6 +68,7 @@ interface IdeState {
   /** Bumped to ask the editor to renumber the current line. */
   renumberRequest: number;
 
+  setDialect(id: string): void;
   setSource(text: string): void;
   replaceDocument(text: string, fileName?: string): void;
   markSaved(fileName: string): void;
@@ -90,6 +94,15 @@ interface IdeState {
 
 const autosaved = typeof localStorage !== 'undefined' ? loadAutosave() : null;
 
+/** The persisted dialect if it still exists in the registry, else the first one. */
+function initialDialect(): Dialect {
+  const savedId = typeof localStorage !== 'undefined' ? getDialectId() : null;
+  if (savedId && dialects.some((d) => d.id === savedId)) {
+    return getDialect(savedId);
+  }
+  return dialects[0]!;
+}
+
 /** Default the virtual keyboard to shown on touch/small-screen devices. */
 function defaultVirtualKeyboard(): boolean {
   if (typeof window === 'undefined') return false;
@@ -98,11 +111,25 @@ function defaultVirtualKeyboard(): boolean {
   );
 }
 
+/**
+ * True when the document is "untouched" — blank, or exactly one dialect's
+ * starter program. Only such a document is swapped for the new starter when
+ * the target machine changes; anything the user wrote or loaded is left alone.
+ */
+function isStarterOrEmpty(source: string): boolean {
+  return (
+    source.trim() === '' || dialects.some((d) => d.samples[0]?.text === source)
+  );
+}
+
+const startupDialect = initialDialect();
+const startupText = autosaved?.text ?? startupDialect.samples[0]?.text ?? '';
+
 export const useIdeStore = create<IdeState>((set) => ({
-  dialect: getDialect('zx81'),
+  dialect: startupDialect,
   fileName: autosaved?.name ?? 'untitled.bas',
-  source: autosaved?.text ?? '',
-  docOverride: { text: autosaved?.text ?? '', seq: 0 },
+  source: startupText,
+  docOverride: { text: startupText, seq: 0 },
   dirty: false,
   emulatorStatus: 'stopped',
   runRequest: 0,
@@ -130,6 +157,28 @@ export const useIdeStore = create<IdeState>((set) => ({
     typeof localStorage !== 'undefined' ? getLineNumberIncrement() : 10,
   renumberRequest: 0,
 
+  setDialect: (id) =>
+    set((s) => {
+      if (id === s.dialect.id) return {};
+      persistDialectId(id);
+      const next = getDialect(id);
+      // Swap in the new machine's starter only when the document is untouched;
+      // never clobber the user's own code. Either way refresh docOverride so the
+      // editor (rebuilt on dialect change) shows the right text, not stale
+      // content.
+      const swap = isStarterOrEmpty(s.source);
+      const text = swap ? (next.samples[0]?.text ?? '') : s.source;
+      return {
+        dialect: next,
+        source: text,
+        docOverride: { text, seq: s.docOverride.seq + 1 },
+        dirty: swap ? false : s.dirty,
+        fileName: swap ? 'untitled.bas' : s.fileName,
+        // The emulator pane tears down the old machine when `dialect` changes;
+        // mark it stopped so the UI reflects the switch immediately.
+        emulatorStatus: 'stopped',
+      };
+    }),
   setSource: (text) => set({ source: text, dirty: true }),
   replaceDocument: (text, fileName) =>
     set((s) => ({
