@@ -23,7 +23,7 @@ import {
   setKeyboardSound as persistKeyboardSound,
   setKeyboardHaptics as persistKeyboardHaptics,
 } from '../storage/settings';
-import { MOBILE_QUERY } from './useMediaQuery';
+import { MOBILE_QUERY, isMobileViewport } from './useMediaQuery';
 
 export type EmulatorStatus = 'stopped' | 'running';
 export type MobileTab = 'editor' | 'preview' | 'settings' | 'ai';
@@ -182,8 +182,12 @@ export const useIdeStore = create<IdeState>((set) => ({
         dirty: swap ? false : s.dirty,
         fileName: swap ? 'untitled.bas' : s.fileName,
         // The emulator pane tears down the old machine when `dialect` changes;
-        // mark it stopped so the UI reflects the switch immediately.
+        // mark it stopped so the UI reflects the switch immediately. Also bump
+        // stopRequest so any in-flight run loop is explicitly halted.
         emulatorStatus: 'stopped',
+        stopRequest: s.stopRequest + 1,
+        // On mobile, surface the change in the editor the user is now editing.
+        ...(isMobileViewport() ? { mobileTab: 'editor' as MobileTab } : {}),
       };
     }),
   setSource: (text) => set({ source: text, dirty: true }),
@@ -193,6 +197,11 @@ export const useIdeStore = create<IdeState>((set) => ({
       docOverride: { text, seq: s.docOverride.seq + 1 },
       ...(fileName !== undefined ? { fileName } : {}),
       dirty: fileName === undefined,
+      // On mobile, loading new content stops any running program and brings the
+      // user back to the editor showing what was just loaded.
+      ...(isMobileViewport()
+        ? { stopRequest: s.stopRequest + 1, mobileTab: 'editor' as MobileTab }
+        : {}),
     })),
   markSaved: (fileName) => set({ fileName, dirty: false }),
   requestRun: () => set((s) => ({ runRequest: s.runRequest + 1 })),
