@@ -266,8 +266,9 @@ textarea {
   background:
     repeating-linear-gradient(
       to bottom,
-      transparent 0 2px,
-      rgb(0 0 0 / 14%) 2px 4px
+      transparent 0 1px,
+      rgb(0 0 0 / 6%) 2px,
+      transparent 3px 4px
     ),
     radial-gradient(ellipse at center, transparent 62%, rgb(0 0 0 / 22%) 100%);
 }
