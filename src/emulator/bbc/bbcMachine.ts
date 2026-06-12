@@ -2,7 +2,6 @@ import { fake6502, type Cpu6502 } from 'jsbeeb/src/fake6502.js';
 import { findModel } from 'jsbeeb/src/models.js';
 import { Video } from 'jsbeeb/src/video.js';
 import { FakeSoundChip } from 'jsbeeb/src/soundchip.js';
-import * as Tokeniser from 'jsbeeb/src/basic-tokenise.js';
 import * as utils from 'jsbeeb/src/utils.js';
 import type { MachineEmulator } from '../../dialects/types';
 import { BbcHostKeyboard, matrixForToken } from './keyboard';
@@ -34,22 +33,16 @@ export function configureNodeRomPath(jsbeebRoot: string): void {
   utils.setNodeBasePath(jsbeebRoot);
 }
 
-let tokeniserPromise: Promise<Tokeniser.Tokeniser> | null = null;
-function getTokeniser(): Promise<Tokeniser.Tokeniser> {
-  if (!tokeniserPromise) tokeniserPromise = Tokeniser.create();
-  return tokeniserPromise;
-}
-
 /**
  * The BBC Micro Model B, wrapped around the jsbeeb emulator
  * (https://github.com/mattgodbolt/jsbeeb, GPL-3.0-or-later).
  *
  * Unlike the in-tree Z80 machines this adapter delegates all hardware
  * emulation — 6502, video ULA + CRTC + SAA5050 teletext, VIAs, keyboard — to
- * jsbeeb and only maps its API onto the MachineEmulator contract. Programs
- * are loaded the way the Owlet editor does it: tokenize with the genuine
- * BASIC ROM routine, poke the result at PAGE, then type RUN into the OS
- * keyboard buffer.
+ * jsbeeb and only maps its API onto the MachineEmulator contract. The dialect
+ * tokenizes BASIC to the genuine BASIC II byte layout (see
+ * src/dialects/bbcmicro/tokenizer.ts), so loading is simply: poke the image at
+ * PAGE, fix up TOP/VARTOP, then type RUN into the OS keyboard buffer.
  */
 export class BbcMachine implements MachineEmulator {
   readonly displayWidth = BBC_DISPLAY_WIDTH;
@@ -115,23 +108,18 @@ export class BbcMachine implements MachineEmulator {
   }
 
   /**
-   * Inject BASIC source (the dialect's "image" is plain machine-charset
-   * text). ROM loading and tokenizer boot are async, so the work is queued;
-   * frames render the machine booting in the meantime and the program starts
-   * as soon as the pipeline lands it.
+   * Inject a tokenized BASIC program (the dialect's "image": the BASIC II
+   * in-memory layout, terminated by 0x0D 0xFF). ROM loading is async, so the
+   * work is queued; frames render the machine booting in the meantime and the
+   * program starts as soon as the pipeline lands it.
    */
   loadProgram(image: Uint8Array): void {
     const generation = ++this.loadGeneration;
     this.loadError = '';
-    let text = '';
-    for (let i = 0; i < image.length; i++)
-      text += String.fromCharCode(image[i]!);
     void (async () => {
       try {
         await this.ready;
-        const tokeniser = await getTokeniser();
         if (generation !== this.loadGeneration || this.disposed) return;
-        const tokenised = tokeniser.tokenise(text);
         this.injecting = true;
         try {
           this.cpu.sysvia.clearKeys();
@@ -139,11 +127,11 @@ export class BbcMachine implements MachineEmulator {
           this.cpu.execute(BOOT_CYCLES);
           const page = this.cpu.readmem(0x18) << 8;
           if (page === 0) throw new Error('BBC OS did not boot to BASIC');
-          for (let i = 0; i < tokenised.length; i++) {
-            this.cpu.writemem(page + i, tokenised.charCodeAt(i));
+          for (let i = 0; i < image.length; i++) {
+            this.cpu.writemem(page + i, image[i]!);
           }
           // TOP and VARTOP point past the program so BASIC accepts it.
-          const end = page + tokenised.length;
+          const end = page + image.length;
           this.cpu.writemem(0x02, end & 0xff);
           this.cpu.writemem(0x03, (end >>> 8) & 0xff);
           this.cpu.writemem(0x12, end & 0xff);

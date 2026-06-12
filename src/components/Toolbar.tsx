@@ -47,12 +47,14 @@ export function Toolbar() {
     if (opened) replaceDocument(opened.text, opened.name);
   });
 
-  const importP = guard(async () => {
-    if (!confirmDiscard()) return;
-    const opened = await openBinaryFile('.p');
+  const importBinary = guard(async () => {
+    const fmt = dialect.binaryImport;
+    if (!fmt || !confirmDiscard()) return;
+    const opened = await openBinaryFile(fmt.extension);
     if (!opened) return;
     const text = dialect.detokenize(opened.bytes);
-    replaceDocument(text, opened.name.replace(/\.p$/i, '.bas'));
+    const ext = new RegExp(`\\${fmt.extension}$`, 'i');
+    replaceDocument(text, opened.name.replace(ext, '.bas'));
   });
 
   const saveFile = guard(async () => {
@@ -80,7 +82,11 @@ export function Toolbar() {
             >
               <button onClick={newFile}>New</button>
               <button onClick={openFile}>Open .bas…</button>
-              <button onClick={importP}>Import .P…</button>
+              {dialect.binaryImport && (
+                <button onClick={importBinary}>
+                  {dialect.binaryImport.label}
+                </button>
+              )}
               <button onClick={saveFile}>Save .bas</button>
               <button onClick={openShare}>Share / Export…</button>
               <div className="menu-separator" />

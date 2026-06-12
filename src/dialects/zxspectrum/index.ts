@@ -49,5 +49,7 @@ export const zxspectrum: Dialect = {
 
   buildTargets: spectrumBuildTargets,
 
+  binaryImport: { extension: '.tap', label: 'Import .TAP…' },
+
   aiProfile: spectrumAiProfile,
 };

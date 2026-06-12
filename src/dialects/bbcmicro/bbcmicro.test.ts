@@ -25,11 +25,18 @@ describe('BBC dialect', () => {
     expect(getDialect('bbcmicro')).toBe(bbcmicro);
   });
 
-  it('tokenize passes source through as the image', () => {
+  it('tokenizes to the BASIC II layout and round-trips', () => {
     const result = bbcmicro.tokenize('10 PRINT "HI"\n');
     expect(result.errors).toEqual([]);
-    expect(result.image.length).toBeGreaterThan(0);
+    // 0x0D, line 0x000A, len, body…, 0x0D 0xFF end marker.
+    expect(Array.from(result.image.slice(0, 3))).toEqual([0x0d, 0x00, 0x0a]);
+    expect(Array.from(result.image.slice(-2))).toEqual([0x0d, 0xff]);
+    expect(result.image).toContain(0xf1); // PRINT token
     expect(bbcmicro.detokenize(result.image)).toBe('10 PRINT "HI"\n');
+  });
+
+  it('reports an empty image (but no error) for a blank program', () => {
+    expect(bbcmicro.tokenize('').image.length).toBe(0);
   });
 
   it('lint reports charset errors with line and column', () => {
@@ -37,6 +44,11 @@ describe('BBC dialect', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0]!.line).toBe(2);
     expect(errors[0]!.column).toBe(10);
+  });
+
+  it('declares a .bbc binary import/export format', () => {
+    expect(bbcmicro.binaryImport?.extension).toBe('.bbc');
+    expect(bbcmicro.buildTargets.map((t) => t.fileExtension)).toContain('bbc');
   });
 
   it('bundled samples lint clean', () => {

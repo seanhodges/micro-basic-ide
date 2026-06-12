@@ -2,6 +2,7 @@ import { describe, expect, it, beforeAll } from 'vitest';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { BbcMachine, configureNodeRomPath } from './bbcMachine';
+import { tokenizeProgram } from '../../dialects/bbcmicro/tokenizer';
 
 // Point jsbeeb's ROM loader at the real ROMs shipped in its npm package.
 beforeAll(() => {
@@ -49,10 +50,8 @@ describe('BbcMachine (jsbeeb adapter)', () => {
 
   it('loads and runs a BASIC program', async () => {
     const machine = new BbcMachine();
-    const source = '10 PRINT "HELLO BEEB"\n20 END\n';
-    const image = new Uint8Array(source.length);
-    for (let i = 0; i < source.length; i++) image[i] = source.charCodeAt(i);
-    machine.loadProgram(image);
+    const { bytes } = tokenizeProgram('10 PRINT "HELLO BEEB"\n20 END\n');
+    machine.loadProgram(bytes);
     const ran = await runUntil(machine, () =>
       screenText(machine).includes('HELLO BEEB'),
     );
