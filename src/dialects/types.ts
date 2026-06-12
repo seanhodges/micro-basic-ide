@@ -121,6 +121,11 @@ export interface Dialect {
   lint(source: string): TokenizeError[];
   /** URL of the machine ROM (resolved against the deployed base path). */
   romUrl: string;
+  /**
+   * Native emulator canvas size in pixels. Defaults to the classic 256×192
+   * shared by the Sinclair machines when absent.
+   */
+  displaySize?: { width: number; height: number };
   createEmulator(opts: {
     rom: Uint8Array;
     ramKb: 16 | 32 | 64;
