@@ -84,7 +84,7 @@ const rows: KeyDef[][] = [
     key('Digit7', ['7', act('↑', 'up'), ins("'", "'"), null, null]),
     key('Digit8', ['8', act('→', 'right'), '(', null, null]),
     key('Digit9', ['9', noop('GRAPH'), ')', null, null]),
-    key('Digit0', ['0', act('DELETE', 'backspace'), '_', null, null]),
+    key('Digit0', ['0', act('⌫', 'backspace'), '_', null, null]),
   ],
   [
     letter('KeyQ', 'q', '<=', 'PLOT', word('SIN')),
@@ -109,8 +109,7 @@ const rows: KeyDef[][] = [
     letter('KeyK', 'k', '+', 'LIST', word('LEN')),
     letter('KeyL', 'l', '=', 'LET', word('USR')),
     {
-      ...key('Enter', [act('ENTER', 'newline'), null, null, null, null]),
-      style: 'small-main',
+      ...key('Enter', [act('↵', 'newline'), null, null, null, null]),
     },
   ],
   [
@@ -120,7 +119,7 @@ const rows: KeyDef[][] = [
       emits: ['CapsShift'],
       modifier: 'caps',
       style: 'shift',
-      labels: [{ text: 'CAPS SHIFT' }, null, null, null, null],
+      labels: [{ text: '⇧ Caps' }, null, null, null, null],
     },
     letter('KeyZ', 'z', ':', 'COPY', word('LN')),
     letter('KeyX', 'x', ins('£', '£'), 'CLEAR', word('EXP')),
@@ -135,7 +134,7 @@ const rows: KeyDef[][] = [
       emits: ['SymShift'],
       modifier: 'symbol',
       style: 'symshift',
-      labels: [{ text: 'SYMBOL SHIFT' }, null, null, null, null],
+      labels: [{ text: '⇧ Sym' }, null, null, null, null],
     },
     {
       ...key('Space', [ins('SPACE', ' '), noop('BREAK'), null, null, null]),
@@ -177,7 +176,7 @@ const rows: KeyDef[][] = [
       spanX: 8,
       emits: ['CapsShift', 'Digit0'],
       style: 'extra',
-      labels: [act('DELETE', 'backspace') as KeyLabel, null, null, null, null],
+      labels: [act('⌫', 'backspace') as KeyLabel, null, null, null, null],
     },
   ],
 ];
