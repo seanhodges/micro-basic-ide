@@ -177,7 +177,7 @@ const rows: KeyDef[][] = [
     key('Digit7', ['7', act('↑', 'up'), null, null, 'halfT']),
     key('Digit8', ['8', act('→', 'right'), null, null, 'halfR']),
     key('Digit9', ['9', noop('GRAPHICS'), null, null, null]),
-    key('Digit0', ['0', act('RUBOUT', 'backspace'), null, null, null]),
+    key('Digit0', ['0', act('⌫', 'backspace'), null, null, null]),
   ],
   [
     key('KeyQ', ['Q', '""', 'PLOT', 'SIN', 'q3NoTL']),
@@ -204,13 +204,12 @@ const rows: KeyDef[][] = [
     key('KeyL', ['L', '=', 'LET', 'USR', null]),
     {
       ...key('Enter', [
-        act('NEW LINE', 'newline'),
+        act('↵', 'newline'),
         noop('FUNCTION'),
         null,
         null,
         null,
       ]),
-      style: 'small-main',
     },
   ],
   [
@@ -220,7 +219,7 @@ const rows: KeyDef[][] = [
       emits: ['Shift'],
       modifier: 'shift',
       style: 'shift',
-      labels: [{ text: 'SHIFT' }, null, null, null, null],
+      labels: [{ text: '⇧' }, null, null, null, null],
     },
     key('KeyZ', ['Z', ':', 'COPY', 'LN', null]),
     key('KeyX', ['X', ';', 'CLEAR', 'EXP', null]),
@@ -304,7 +303,7 @@ const rows: KeyDef[][] = [
       emits: ['Shift', 'Digit0'],
       style: 'extra',
       labels: [
-        { text: 'RUBOUT', editor: { action: 'backspace' } },
+        { text: '⌫', editor: { action: 'backspace' } },
         null,
         null,
         null,

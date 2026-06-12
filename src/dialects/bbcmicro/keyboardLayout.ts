@@ -68,9 +68,9 @@ function machKey(
 }
 
 const fnRow: KeyDef[] = [
-  machKey('Escape', 'ESC', 6),
+  machKey('Escape', 'Esc', 6),
   ...Array.from({ length: 10 }, (_, i) => machKey(`F${i}`, `f${i}`, 5, 'fn')),
-  machKey('Break', 'BRK', 10, 'fn'),
+  machKey('Break', 'Brk', 10, 'fn'),
 ];
 
 const digitRow: KeyDef[] = [
@@ -92,7 +92,7 @@ const digitRow: KeyDef[] = [
 ];
 
 const qwertyRow: KeyDef[] = [
-  machKey('Tab', 'TAB', 6),
+  machKey('Tab', '⇥', 6),
   key('KeyQ', 'Q'),
   key('KeyW', 'W'),
   key('KeyE', 'E'),
@@ -111,8 +111,8 @@ const qwertyRow: KeyDef[] = [
 ];
 
 const homeRow: KeyDef[] = [
-  machKey('CapsLock', 'CAPS', 5),
-  machKey('Ctrl', 'CTRL', 5, undefined),
+  machKey('CapsLock', '⇪', 5),
+  machKey('Ctrl', 'Ctrl', 5, undefined),
   key('KeyA', 'A'),
   key('KeyS', 'S'),
   key('KeyD', 'D'),
@@ -125,16 +125,16 @@ const homeRow: KeyDef[] = [
   key('Semicolon', ';', '+'),
   key('Colon', ':', '*'),
   key('BracketRight', ']', '}'),
-  actKey('Enter', 'RETURN', 'newline', 8),
+  actKey('Enter', '↵', 'newline', 8),
 ];
 
 const bottomRow: KeyDef[] = [
-  machKey('ShiftLock', 'SH LK', 5),
+  machKey('ShiftLock', '⇧ Lk', 5),
   {
     id: 'ShiftL',
     spanX: 6,
     emits: ['Shift'],
-    labels: [{ text: 'SHIFT', editor: null }, null],
+    labels: [{ text: '⇧', editor: null }, null],
     modifier: 'shift',
   },
   key('KeyZ', 'Z'),
@@ -151,11 +151,11 @@ const bottomRow: KeyDef[] = [
     id: 'ShiftR',
     spanX: 6,
     emits: ['Shift'],
-    labels: [{ text: 'SHIFT', editor: null }, null],
+    labels: [{ text: '⇧', editor: null }, null],
     modifier: 'shift',
   },
-  actKey('Delete', 'DEL', 'backspace', 5),
-  machKey('Copy', 'COPY', 4),
+  actKey('Delete', '⌫', 'backspace', 5),
+  machKey('Copy', 'Copy', 4),
 ];
 
 const spaceRow: KeyDef[] = [
