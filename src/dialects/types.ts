@@ -1,5 +1,6 @@
 import type { Extension } from '@codemirror/state';
 import type { CompletionSource } from '@codemirror/autocomplete';
+import type { KeyboardLayout } from '../keyboard/layoutSchema';
 
 /** One keyword of a BASIC dialect, driving tokenizing, highlighting and autocomplete. */
 export interface KeywordInfo {
@@ -69,6 +70,14 @@ export interface MachineEmulator {
   renderTo(ctx: CanvasRenderingContext2D): void;
   /** Returns true when the key event was consumed. */
   keyEvent(e: KeyboardEvent, down: boolean): boolean;
+  /**
+   * Press/release an opaque machine-defined key token (for the ZX81 these are
+   * DOM-code-style strings: 'KeyJ', 'Shift', 'Enter'…). Used by the virtual
+   * keyboard to drive the key matrix directly, bypassing DOM key events.
+   */
+  setKey(token: string, down: boolean): void;
+  /** Release every key held by any source (stop, blur, unmount…). */
+  releaseAllKeys(): void;
   /** Emulation speed multiplier (1 = real time). */
   setSpeed(multiplier: number): void;
   readonly displayWidth: number;
@@ -106,6 +115,8 @@ export interface Dialect {
     rom: Uint8Array;
     ramKb: 16 | 32 | 64;
   }): MachineEmulator;
+  /** On-screen keyboard: authentic layout, labels and theme as pure data. */
+  keyboardLayout: KeyboardLayout;
   buildTargets: BuildTarget[];
   /** Cassette-audio loading support, when the machine loads from tape. */
   audio?: {

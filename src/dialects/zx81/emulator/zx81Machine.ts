@@ -197,6 +197,14 @@ export class Zx81Machine implements MachineEmulator {
     return this.keyboard.handleKey(e, down);
   }
 
+  setKey(token: string, down: boolean): void {
+    this.keyboard.setKey(token, down);
+  }
+
+  releaseAllKeys(): void {
+    this.keyboard.releaseAll();
+  }
+
   setSpeed(multiplier: number): void {
     this.speed = Math.max(0.1, multiplier);
   }

@@ -9,6 +9,12 @@ export function SettingsForm() {
   const setLineNumberIncrement = useIdeStore((s) => s.setLineNumberIncrement);
   const crtEffect = useIdeStore((s) => s.crtEffect);
   const setCrtEffect = useIdeStore((s) => s.setCrtEffect);
+  const virtualKeyboard = useIdeStore((s) => s.virtualKeyboard);
+  const setVirtualKeyboard = useIdeStore((s) => s.setVirtualKeyboard);
+  const keyboardSound = useIdeStore((s) => s.keyboardSound);
+  const setKeyboardSound = useIdeStore((s) => s.setKeyboardSound);
+  const keyboardHaptics = useIdeStore((s) => s.keyboardHaptics);
+  const setKeyboardHaptics = useIdeStore((s) => s.setKeyboardHaptics);
   const emulatorSpeed = useIdeStore((s) => s.emulatorSpeed);
   const setEmulatorSpeed = useIdeStore((s) => s.setEmulatorSpeed);
   const [key, setKey] = useState(getApiKey());
@@ -64,6 +70,31 @@ export function SettingsForm() {
           <option value={2}>2×</option>
           <option value={8}>8×</option>
         </select>
+      </label>
+      <h3>On-screen keyboard</h3>
+      <label className="inline">
+        <input
+          type="checkbox"
+          checked={virtualKeyboard}
+          onChange={(e) => setVirtualKeyboard(e.target.checked)}
+        />
+        Show virtual keyboard
+      </label>
+      <label className="inline">
+        <input
+          type="checkbox"
+          checked={keyboardSound}
+          onChange={(e) => setKeyboardSound(e.target.checked)}
+        />
+        Key click sound
+      </label>
+      <label className="inline">
+        <input
+          type="checkbox"
+          checked={keyboardHaptics}
+          onChange={(e) => setKeyboardHaptics(e.target.checked)}
+        />
+        Haptic feedback
       </label>
       <h3>AI</h3>
       <p>

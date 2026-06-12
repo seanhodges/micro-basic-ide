@@ -7,6 +7,7 @@ import {
   SCREEN_HEIGHT,
 } from '../app/screenScale';
 import type { MachineEmulator } from '../dialects/types';
+import { VirtualKeyboard } from '../keyboard/VirtualKeyboard';
 
 const romCache = new Map<string, Promise<Uint8Array>>();
 
@@ -35,10 +36,16 @@ export function EmulatorPane() {
   const crtEffect = useIdeStore((s) => s.crtEffect);
   const emulatorStatus = useIdeStore((s) => s.emulatorStatus);
   const setEmulatorStatus = useIdeStore((s) => s.setEmulatorStatus);
+  const virtualKeyboard = useIdeStore((s) => s.virtualKeyboard);
+  const setVirtualKeyboard = useIdeStore((s) => s.setVirtualKeyboard);
+  const keyboardSound = useIdeStore((s) => s.keyboardSound);
+  const keyboardHaptics = useIdeStore((s) => s.keyboardHaptics);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const keyboardHostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const machineRef = useRef<MachineEmulator | null>(null);
+  const frameHookRef = useRef<(() => void) | null>(null);
   const rafRef = useRef(0);
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
@@ -57,6 +64,7 @@ export function EmulatorPane() {
       const canvas = canvasRef.current;
       if (machine && canvas) {
         machine.runFrame();
+        frameHookRef.current?.(); // virtual-keyboard frame-counted releases
         const ctx = canvas.getContext('2d');
         if (ctx) machine.renderTo(ctx);
       }
@@ -111,6 +119,7 @@ export function EmulatorPane() {
   useEffect(() => {
     if (stopRequest === 0) return;
     stopLoop();
+    machineRef.current?.releaseAllKeys(); // nothing stays held while paused
     setEmulatorStatus('stopped');
   }, [stopRequest, stopLoop, setEmulatorStatus]);
 
@@ -123,6 +132,7 @@ export function EmulatorPane() {
       try {
         const machine = await ensureMachine();
         if (cancelled) return;
+        machine.releaseAllKeys();
         machine.reset();
         setEmulatorStatus('running');
         startLoop();
@@ -140,11 +150,22 @@ export function EmulatorPane() {
   useEffect(
     () => () => {
       stopLoop();
+      machineRef.current?.releaseAllKeys();
       machineRef.current?.dispose();
       machineRef.current = null;
     },
     [stopLoop],
   );
+
+  // Backgrounding pauses the rAF loop; clear the matrix so no key stays held.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden')
+        machineRef.current?.releaseAllKeys();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
 
   useEffect(() => {
     machineRef.current?.setSpeed(speed);
@@ -158,18 +179,26 @@ export function EmulatorPane() {
     if (!container) return;
     const update = () => {
       const rect = container.getBoundingClientRect();
+      // The virtual keyboard shares the pane; the screen gets what's left.
+      const kbHeight = keyboardHostRef.current?.offsetHeight ?? 0;
       setScale(
         computeIntegerScale(
           rect.width - 2 * MOBILE_BEZEL,
-          rect.height - 2 * MOBILE_BEZEL,
+          rect.height - 2 * MOBILE_BEZEL - (kbHeight > 0 ? kbHeight + 10 : 0),
         ),
       );
     };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(container);
+    if (keyboardHostRef.current) observer.observe(keyboardHostRef.current);
     return () => observer.disconnect();
-  }, [isMobile]);
+  }, [isMobile, virtualKeyboard]);
+
+  const getMachine = useCallback(() => machineRef.current, []);
+  const registerFrameHook = useCallback((cb: (() => void) | null) => {
+    frameHookRef.current = cb;
+  }, []);
 
   const handleKey = (e: React.KeyboardEvent, down: boolean) => {
     if (e.key === 'Escape') {
@@ -204,14 +233,42 @@ export function EmulatorPane() {
           onBlur={() => setFocused(false)}
         />
       </div>
-      <span className={`emulator-state ${emulatorStatus}`}>
-        {emulatorStatus === 'running'
-          ? focused
-            ? 'running — keys go to ZX81 (Esc to release)'
-            : 'running — click screen to type'
-          : 'stopped'}
-      </span>
+      <div className="emulator-status-row">
+        <span className={`emulator-state ${emulatorStatus}`}>
+          {emulatorStatus === 'running'
+            ? focused
+              ? 'running — keys go to ZX81 (Esc to release)'
+              : virtualKeyboard
+                ? 'running — tap the keys below'
+                : 'running — click screen to type'
+            : 'stopped'}
+        </span>
+        <button
+          className={`vk-toggle ${virtualKeyboard ? 'active' : ''}`}
+          aria-pressed={virtualKeyboard}
+          title={
+            virtualKeyboard
+              ? 'Hide on-screen keyboard'
+              : 'Show on-screen keyboard'
+          }
+          onClick={() => setVirtualKeyboard(!virtualKeyboard)}
+        >
+          ⌨
+        </button>
+      </div>
       {error && <div className="emulator-error">{error}</div>}
+      {virtualKeyboard && (
+        <div className="vk-host" ref={keyboardHostRef}>
+          <VirtualKeyboard
+            layout={dialect.keyboardLayout}
+            getMachine={getMachine}
+            enabled={emulatorStatus === 'running'}
+            registerFrameHook={registerFrameHook}
+            sound={keyboardSound}
+            haptics={keyboardHaptics}
+          />
+        </div>
+      )}
     </div>
   );
 }

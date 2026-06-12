@@ -8,11 +8,18 @@ import {
   getCrtEffect,
   getSplitRatio,
   getEmulatorSpeed,
+  getVirtualKeyboard,
+  getKeyboardSound,
+  getKeyboardHaptics,
   setAutoLineNumbering as persistAutoLineNumbering,
   setLineNumberIncrement as persistLineNumberIncrement,
   setCrtEffect as persistCrtEffect,
   setEmulatorSpeed as persistEmulatorSpeed,
+  setVirtualKeyboard as persistVirtualKeyboard,
+  setKeyboardSound as persistKeyboardSound,
+  setKeyboardHaptics as persistKeyboardHaptics,
 } from '../storage/settings';
+import { MOBILE_QUERY } from './useMediaQuery';
 
 export type EmulatorStatus = 'stopped' | 'running';
 export type MobileTab = 'editor' | 'preview' | 'settings' | 'ai';
@@ -36,6 +43,12 @@ interface IdeState {
   emulatorSpeed: number;
   /** CRT scanline overlay on the monitor. */
   crtEffect: boolean;
+  /** On-screen virtual keyboard under the monitor. */
+  virtualKeyboard: boolean;
+  /** Audible click on virtual key presses. */
+  keyboardSound: boolean;
+  /** Haptic buzz on virtual key presses (where supported). */
+  keyboardHaptics: boolean;
   /** Active tab in the mobile (portrait) layout. */
   mobileTab: MobileTab;
   /** Editor/monitor split position on desktop (fraction of workspace width). */
@@ -58,6 +71,9 @@ interface IdeState {
   requestReset(): void;
   setEmulatorSpeed(n: number): void;
   setCrtEffect(on: boolean): void;
+  setVirtualKeyboard(on: boolean): void;
+  setKeyboardSound(on: boolean): void;
+  setKeyboardHaptics(on: boolean): void;
   setMobileTab(tab: MobileTab): void;
   setSplitRatio(n: number): void;
   setEmulatorStatus(status: EmulatorStatus): void;
@@ -71,6 +87,14 @@ interface IdeState {
 
 const autosaved = typeof localStorage !== 'undefined' ? loadAutosave() : null;
 
+/** Default the virtual keyboard to shown on touch/small-screen devices. */
+function defaultVirtualKeyboard(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia?.(MOBILE_QUERY).matches || navigator.maxTouchPoints > 0
+  );
+}
+
 export const useIdeStore = create<IdeState>((set) => ({
   dialect: getDialect('zx81'),
   fileName: autosaved?.name ?? 'untitled.bas',
@@ -83,6 +107,14 @@ export const useIdeStore = create<IdeState>((set) => ({
   resetRequest: 0,
   emulatorSpeed: typeof localStorage !== 'undefined' ? getEmulatorSpeed() : 1,
   crtEffect: typeof localStorage !== 'undefined' ? getCrtEffect() : true,
+  virtualKeyboard:
+    typeof localStorage !== 'undefined'
+      ? (getVirtualKeyboard() ?? defaultVirtualKeyboard())
+      : false,
+  keyboardSound:
+    typeof localStorage !== 'undefined' ? getKeyboardSound() : false,
+  keyboardHaptics:
+    typeof localStorage !== 'undefined' ? getKeyboardHaptics() : true,
   mobileTab: 'editor',
   splitRatio: typeof localStorage !== 'undefined' ? getSplitRatio() : 0.5,
   aiPanelOpen: false,
@@ -113,6 +145,18 @@ export const useIdeStore = create<IdeState>((set) => ({
   setCrtEffect: (on) => {
     persistCrtEffect(on);
     set({ crtEffect: on });
+  },
+  setVirtualKeyboard: (on) => {
+    persistVirtualKeyboard(on);
+    set({ virtualKeyboard: on });
+  },
+  setKeyboardSound: (on) => {
+    persistKeyboardSound(on);
+    set({ keyboardSound: on });
+  },
+  setKeyboardHaptics: (on) => {
+    persistKeyboardHaptics(on);
+    set({ keyboardHaptics: on });
   },
   setMobileTab: (tab) => set({ mobileTab: tab }),
   setSplitRatio: (n) => set({ splitRatio: n }),

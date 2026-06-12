@@ -12,6 +12,7 @@ import {
   CASSETTE_SAMPLE_RATE,
 } from './targets';
 import { Zx81Machine } from './emulator/zx81Machine';
+import { zx81KeyboardLayout } from './keyboardLayout';
 
 export const zx81: Dialect = {
   id: 'zx81',
@@ -44,6 +45,8 @@ export const zx81: Dialect = {
   createEmulator(opts) {
     return new Zx81Machine(opts);
   },
+
+  keyboardLayout: zx81KeyboardLayout,
 
   buildTargets: zx81BuildTargets,
 

@@ -40,28 +40,46 @@ ROWS.forEach((keys, row) =>
 export class Zx81Keyboard {
   /** Bit set = key currently pressed; matrix[row] bits 0-4. */
   private readonly matrix = new Uint8Array(8);
+  /** Keys held via the physical keyboard (handleKey). */
+  private readonly physicalDown = new Set<string>();
+  /** Keys held via the virtual keyboard or scripted input (setKey). */
+  private readonly virtualDown = new Set<string>();
 
   /** Translate a host key event into matrix state. Returns true if consumed. */
   handleKey(e: KeyboardEvent, down: boolean): boolean {
     const codes = this.translate(e);
     if (codes.length === 0) return false;
     for (const code of codes) {
-      const pos = keyPosition.get(code);
-      if (!pos) continue;
-      if (down) this.matrix[pos.row] = this.matrix[pos.row]! | (1 << pos.bit);
-      else this.matrix[pos.row] = this.matrix[pos.row]! & ~(1 << pos.bit);
+      if (down) this.physicalDown.add(code);
+      else this.physicalDown.delete(code);
+      this.applyKey(code);
     }
     return true;
   }
 
   releaseAll(): void {
+    this.physicalDown.clear();
+    this.virtualDown.clear();
     this.matrix.fill(0);
   }
 
-  /** Press/release a matrix key directly by its code (for scripted input). */
+  /** Press/release a matrix key directly by its code (virtual/scripted input). */
   setKey(code: string, down: boolean): void {
+    if (!keyPosition.has(code)) return;
+    if (down) this.virtualDown.add(code);
+    else this.virtualDown.delete(code);
+    this.applyKey(code);
+  }
+
+  /**
+   * Sync one matrix cell with the union of both press sources, so a physical
+   * keyup can't release a key the virtual keyboard still holds (and vice
+   * versa).
+   */
+  private applyKey(code: string): void {
     const pos = keyPosition.get(code);
     if (!pos) return;
+    const down = this.physicalDown.has(code) || this.virtualDown.has(code);
     if (down) this.matrix[pos.row] = this.matrix[pos.row]! | (1 << pos.bit);
     else this.matrix[pos.row] = this.matrix[pos.row]! & ~(1 << pos.bit);
   }

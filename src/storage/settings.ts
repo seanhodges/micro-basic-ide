@@ -7,6 +7,9 @@ const KEYS = {
   crtEffect: 'mbide.crtEffect',
   splitRatio: 'mbide.splitRatio',
   emulatorSpeed: 'mbide.emulatorSpeed',
+  virtualKeyboard: 'mbide.virtualKeyboard',
+  keyboardSound: 'mbide.keyboardSound',
+  keyboardHaptics: 'mbide.keyboardHaptics',
 } as const;
 
 export const DEFAULT_LINE_INCREMENT = 10;
@@ -49,6 +52,32 @@ export function getCrtEffect(): boolean {
 
 export function setCrtEffect(on: boolean): void {
   localStorage.setItem(KEYS.crtEffect, on ? 'true' : 'false');
+}
+
+/** null = never set; the store falls back to a touch-device default. */
+export function getVirtualKeyboard(): boolean | null {
+  const raw = localStorage.getItem(KEYS.virtualKeyboard);
+  return raw === null ? null : raw === 'true';
+}
+
+export function setVirtualKeyboard(on: boolean): void {
+  localStorage.setItem(KEYS.virtualKeyboard, on ? 'true' : 'false');
+}
+
+export function getKeyboardSound(): boolean {
+  return localStorage.getItem(KEYS.keyboardSound) === 'true'; // default off
+}
+
+export function setKeyboardSound(on: boolean): void {
+  localStorage.setItem(KEYS.keyboardSound, on ? 'true' : 'false');
+}
+
+export function getKeyboardHaptics(): boolean {
+  return localStorage.getItem(KEYS.keyboardHaptics) !== 'false'; // default on
+}
+
+export function setKeyboardHaptics(on: boolean): void {
+  localStorage.setItem(KEYS.keyboardHaptics, on ? 'true' : 'false');
 }
 
 export function getSplitRatio(): number {
