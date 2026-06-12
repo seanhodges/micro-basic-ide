@@ -28,6 +28,7 @@ PERFORMANCE TRICKS
 
 OUTPUT FORMAT
 - Respond with the COMPLETE program (not a diff) in a single \`\`\`basic fenced block, unless the user explicitly asks for a fragment to merge.
+- Write each line flush-left: the line number is the FIRST character of the line, with no leading or aligning spaces, followed by a single space then the statement. Do NOT right-align or pad the numbers like a listing, and do NOT indent loops — the editor expects a digit at the start of every line.
 - After the code, add at most 3 short sentences: controls and anything to verify.
 - Target 48K; keep programs comfortably under 20KB of source.`;
 
