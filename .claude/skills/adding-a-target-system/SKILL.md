@@ -66,11 +66,20 @@ satisfies and the zx81 file to mirror.
 5. **`language.ts`** — `languageSupport(): Extension` and a `CompletionSource`,
    built from the generic builders in `src/editor/`. Mirror `zx81/language.ts`.
 
-6. **`emulator/`** — a `MachineEmulator` implementation. **Reuse the
-   machine-independent Z80 core at `src/emulator/z80/` — do not modify it**;
-   supply your own bus (memory map, I/O ports, any contention model). Mirror the
-   zx81 split: `emulator/<machine>.ts` (the class), `memory.ts`, `display.ts`,
-   `keyboard.ts`. Implement every `MachineEmulator` method:
+6. **`emulator/`** — a `MachineEmulator` implementation. Two proven shapes:
+   - **In-tree bus over a shared CPU core** (Sinclair pattern): **reuse the
+     machine-independent Z80 core at `src/emulator/z80/` — do not modify it**;
+     supply your own bus (memory map, I/O ports, any contention model). Mirror
+     the zx81 split: `emulator/<machine>.ts` (the class), `memory.ts`,
+     `display.ts`, `keyboard.ts`.
+   - **Adapter over an npm emulator** (BBC pattern): wrap the package behind an
+     adapter folder like `src/emulator/bbc/` (jsbeeb) with a hand-written
+     `.d.ts` for the API surface used; copy its ROMs into `public/roms/` in the
+     layout its loader expects; set `displaySize` on the `Dialect` when the
+     screen is not 256×192. **Check the package license first** — jsbeeb's
+     GPL-3.0 is why this project is GPL.
+
+   Either way, implement every `MachineEmulator` method:
    - `reset()` — full reset.
    - `loadProgram(image)` — inject a built image post-boot and arrange for it to
      run (zx81 does this via a ROM load trap + setting the next-line pointer).

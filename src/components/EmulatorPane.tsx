@@ -41,6 +41,13 @@ export function EmulatorPane() {
   const keyboardSound = useIdeStore((s) => s.keyboardSound);
   const keyboardHaptics = useIdeStore((s) => s.keyboardHaptics);
 
+  const display = dialect.displaySize ?? {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+  };
+  // Classic small displays render at 2× on desktop; large framebuffers at 1×.
+  const desktopCssWidth = display.width * (display.width <= 480 ? 2 : 1);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const keyboardHostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -192,19 +199,31 @@ export function EmulatorPane() {
       const rect = container.getBoundingClientRect();
       // The virtual keyboard shares the pane; the screen gets what's left.
       const kbHeight = keyboardHostRef.current?.offsetHeight ?? 0;
-      setScale(
-        computeIntegerScale(
-          rect.width - 2 * MOBILE_BEZEL,
-          rect.height - 2 * MOBILE_BEZEL - (kbHeight > 0 ? kbHeight + 10 : 0),
-        ),
+      const availWidth = rect.width - 2 * MOBILE_BEZEL;
+      const availHeight =
+        rect.height - 2 * MOBILE_BEZEL - (kbHeight > 0 ? kbHeight + 10 : 0);
+      let next = computeIntegerScale(
+        availWidth,
+        availHeight,
+        display.width,
+        display.height,
       );
+      // Displays too large for even 1× (e.g. the BBC's 896×600) shrink
+      // fractionally instead of overflowing the pane.
+      if (display.width * next > availWidth && availWidth > 0) {
+        next = Math.min(
+          availWidth / display.width,
+          availHeight / display.height,
+        );
+      }
+      setScale(next);
     };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(container);
     if (keyboardHostRef.current) observer.observe(keyboardHostRef.current);
     return () => observer.disconnect();
-  }, [isMobile, virtualKeyboard]);
+  }, [isMobile, virtualKeyboard, display.width, display.height]);
 
   const getMachine = useCallback(() => machineRef.current, []);
   const registerFrameHook = useCallback((cb: (() => void) | null) => {
@@ -233,13 +252,16 @@ export function EmulatorPane() {
       >
         <canvas
           ref={canvasRef}
-          width={SCREEN_WIDTH}
-          height={SCREEN_HEIGHT}
+          width={display.width}
+          height={display.height}
           className="emulator-screen"
           style={
             isMobile
-              ? { width: SCREEN_WIDTH * scale, height: SCREEN_HEIGHT * scale }
-              : undefined
+              ? {
+                  width: display.width * scale,
+                  height: display.height * scale,
+                }
+              : { width: desktopCssWidth }
           }
           tabIndex={0}
           onKeyDown={(e) => handleKey(e, true)}

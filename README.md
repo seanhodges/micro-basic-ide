@@ -80,3 +80,14 @@ docs/adding-a-dialect.md   how to add the next machine
 `public/roms/zx81.rom` is © Amstrad, distributed under Amstrad's
 long-standing permission for emulator use — see
 [public/roms/ATTRIBUTION.md](public/roms/ATTRIBUTION.md).
+
+## License
+
+This project is licensed under the **GNU GPL v3.0 or later** — see
+[LICENSE](LICENSE). The BBC Micro target embeds the
+[jsbeeb](https://github.com/mattgodbolt/jsbeeb) emulator
+(© Matt Godbolt and contributors, GPL-3.0-or-later), which is what places
+the combined work under the GPL. The vendored Z80 core
+(`src/emulator/z80/`, MIT, © Molly Howell) keeps its own GPL-compatible
+license. ROM images are third-party copyrighted works — see
+[public/roms/ATTRIBUTION.md](public/roms/ATTRIBUTION.md).

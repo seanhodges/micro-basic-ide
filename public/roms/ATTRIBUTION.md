@@ -18,3 +18,19 @@ comp.sys.sinclair, 1999).
 
 If you are the rights holder and want this file removed, please open an
 issue — the IDE also supports supplying your own ROM image at runtime.
+
+# Acorn ROM attribution
+
+`os.rom` (Acorn MOS 1.20), `BASIC.ROM` (BBC BASIC II), `b/DFS-0.9.rom`
+(Acorn DFS 0.9) and `master/mos3.20` (Master MOS 3.20, used only by the
+in-emulator BASIC tokenizer) are copyright © 1981–1986 Acorn Computers Ltd.
+
+Unlike the Sinclair ROMs there is no formal blanket permission from the
+rights holder, but these images have been distributed with BBC Micro
+emulators (jsbeeb, BeebEm, b-em, MAME and others) for some thirty years on a
+de-facto-tolerated basis. They are included here, unmodified, solely for use
+with the bundled emulator. The images themselves are copies of the ones
+shipped by jsbeeb (https://github.com/mattgodbolt/jsbeeb).
+
+If you are the rights holder and want these files removed, please open an
+issue.

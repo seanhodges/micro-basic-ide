@@ -26,4 +26,35 @@ BASIC:
 
 Nothing outside the dialect folder should need to change: the editor, lint,
 status bar, AI panel, transfer dialog and emulator pane all operate on the
-interface.
+interface. Dialects whose display is not the classic 256×192 set
+`displaySize` on the `Dialect` object; the emulator pane sizes its canvas
+from it.
+
+## Wrapping an existing emulator instead
+
+A dialect's `MachineEmulator` does not have to be built from an in-tree CPU
+core: the BBC Micro target (`src/dialects/bbcmicro/`) wraps the
+[jsbeeb](https://github.com/mattgodbolt/jsbeeb) npm package behind an adapter
+in `src/emulator/bbc/`. That pattern looks like:
+
+- an adapter class implementing `MachineEmulator`, confining all contact
+  with the third-party API to one folder, plus a hand-written `.d.ts` for
+  the surface used (jsbeeb ships no types);
+- ROM assets copied into `public/roms/` in the layout the package's loader
+  expects, with attribution;
+- `tokenize()` may delegate to the emulated machine itself — the BBC dialect
+  passes source text through and lets the genuine BASIC ROM tokenize it at
+  load time (so `byteSize` is approximate and `lint` covers charset only,
+  until a native tokenizer lands).
+
+Mind the license: jsbeeb is GPL-3.0-or-later, which is why this project is
+GPL — see the License section in the README before adding a dependency under
+a different license.
+
+### BBC Micro follow-up checklist
+
+The current BBC target is a preview. Still to do: a native TypeScript
+tokenizer/detokenizer + linter (real `byteSize`, syntax errors in the
+editor), full keyword table, authentic keyboard layout styling/theme, sound
+(real jsbeeb SoundChip + WebAudio), and build targets (`.ssd` disc / UEF
+cassette export).
