@@ -258,14 +258,14 @@ textarea {
   overflow: auto;
 }
 
-/* Tablet landscape: pin the screen to the top so the bottom-40% keyboard
-   overlay can never cover it. The JS fit caps the canvas to 60% height. */
+/* Tablet landscape: pin the screen to the top so the bottom-46% keyboard
+   overlay can never cover it. The JS fit caps the canvas to 54% height. */
 .emulator-pane.overlay {
   justify-content: flex-start;
 }
 
 .emulator-pane.overlay .screen-shell {
-  max-height: 60%;
+  max-height: 54%;
 }
 
 .screen-shell {
@@ -350,7 +350,7 @@ textarea {
 }
 
 /* ---------- Virtual keyboard overlay ---------- */
-/* The single keyboard for every layout: full-width, pinned to the bottom 40%
+/* The single keyboard for every layout: full-width, pinned to the bottom 46%
    of the workspace, with responsive side padding so keys aren't stretched on
    wide screens. */
 .workspace-vk-overlay {
@@ -358,7 +358,7 @@ textarea {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 40%;
+  height: 46%;
   z-index: 5;
   display: flex;
   padding: 6px clamp(8px, 6vw, 96px) calc(6px + env(safe-area-inset-bottom));
@@ -368,7 +368,7 @@ textarea {
 }
 
 /* The keyboard fills the overlay height: only the key rows grow, so keycaps
-   scale to fill the 40% rather than staying at their fixed 58px. */
+   scale to fill the 46% rather than staying at their fixed 58px. */
 .workspace-vk-overlay .virtual-keyboard {
   flex: 1;
   min-height: 0;
@@ -384,9 +384,9 @@ textarea {
 }
 
 /* While the keyboard overlays the editor, pad the editor scroll area so the
-   caret can scroll clear of the bottom 40% overlay. Layout-agnostic. */
+   caret can scroll clear of the bottom 46% overlay. Layout-agnostic. */
 .workspace.kb-open .cm-scroller {
-  padding-bottom: 42vh;
+  padding-bottom: 48vh;
 }
 
 /* Keyboard + watcher toggles relocated to the status bar in overlay mode. */
@@ -1083,10 +1083,10 @@ code {
     z-index: 20;
   }
 
-  /* Lift the run button above the keyboard overlay (bottom 40%) on the editor
+  /* Lift the run button above the keyboard overlay (bottom 46%) on the editor
      tab so it isn't hidden behind it. */
   .workspace.kb-open .fab-run {
-    bottom: calc(40% + 16px);
+    bottom: calc(46% + 16px);
   }
 
   .emulator-pane {
@@ -1131,13 +1131,19 @@ code {
     max-width: none;
   }
 
+  /* On a phone the keyboard spans the full width — drop the wide-screen side
+     gutters down to a thin edge (keep the safe-area inset at the bottom). */
+  .workspace-vk-overlay {
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+
   .vk-pos-center {
     font-size: clamp(12px, 3.4vw, 15px);
   }
 }
 
 /* Height-constrained landscape (phones): the overlay's flex-fill keeps keys
-   inside the bottom 40%; here we just tighten gaps/padding and the legend
+   inside the bottom 46%; here we just tighten gaps/padding and the legend
    strips so shallow keys stay legible. */
 @media (orientation: landscape) and (max-height: 560px) {
   /* Shallow keys: tighten gaps/padding and shrink the function strip below

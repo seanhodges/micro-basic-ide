@@ -35,6 +35,9 @@ interface EmulatorPaneProps {
 /** Bezel width of .screen-shell in the mobile media query. */
 const MOBILE_BEZEL = 8;
 
+/** Padding of .emulator-pane in the mobile media query (each side). */
+const MOBILE_PANE_PAD = 8;
+
 function fetchRom(url: string): Promise<Uint8Array> {
   let cached = romCache.get(url);
   if (!cached) {
@@ -218,7 +221,7 @@ export function EmulatorPane({ apiRef }: EmulatorPaneProps = {}) {
   }, [virtualKeyboard, setVariableWatcher]);
 
   // Fit-to-pane scaling. When the keyboard overlay is up it caps the screen to
-  // the top 60% (the keyboard owns the bottom 40%) and scales fractionally; on
+  // the top 54% (the keyboard owns the bottom 46%) and scales fractionally; on
   // mobile without the keyboard it's integer-perfect. Fires on rotation,
   // address-bar collapse, and when the Preview tab becomes visible again.
   useEffect(() => {
@@ -229,19 +232,19 @@ export function EmulatorPane({ apiRef }: EmulatorPaneProps = {}) {
       const rect = container.getBoundingClientRect();
       // The watcher (if open) shares the pane below the screen.
       const panelHeight = watcherHostRef.current?.offsetHeight ?? 0;
-      const availWidth = rect.width - 2 * MOBILE_BEZEL;
-      // With the keyboard up, never grow past 60% of the pane so the bottom-40%
+      const availWidth = rect.width - 2 * (MOBILE_BEZEL + MOBILE_PANE_PAD);
+      // With the keyboard up, never grow past 54% of the pane so the bottom-46%
       // overlay can never cover the screen.
       const heightBudget = virtualKeyboard
-        ? Math.min(rect.height, rect.height * 0.6)
+        ? Math.min(rect.height, rect.height * 0.54)
         : rect.height;
       const availHeight =
         heightBudget -
-        2 * MOBILE_BEZEL -
+        2 * (MOBILE_BEZEL + MOBILE_PANE_PAD) -
         (panelHeight > 0 ? panelHeight + 10 : 0);
       let next: number;
       if (virtualKeyboard) {
-        // Fractional scale: fill the available 60% region, retaining aspect.
+        // Fractional scale: fill the available 54% region, retaining aspect.
         next =
           availWidth > 0 && availHeight > 0
             ? Math.min(availWidth / display.width, availHeight / display.height)
@@ -338,17 +341,22 @@ export function EmulatorPane({ apiRef }: EmulatorPaneProps = {}) {
           onBlur={() => setFocused(false)}
         />
       </div>
-      <div className="emulator-status-row">
-        <span className={`emulator-state ${emulatorStatus}`}>
-          {emulatorStatus === 'running'
-            ? focused
-              ? `running — keys go to ${dialect.name} (Esc to release)`
-              : virtualKeyboard
-                ? 'running — tap the keys below'
-                : 'running — click screen to type'
-            : 'stopped'}
-        </span>
-      </div>
+      {/* The status notice only matters when grabbing input from a physical
+          keyboard (Esc-to-release / click-to-type). On touch it just wastes a
+          row of vertical height, so hide it there. */}
+      {!HAS_TOUCH && (
+        <div className="emulator-status-row">
+          <span className={`emulator-state ${emulatorStatus}`}>
+            {emulatorStatus === 'running'
+              ? focused
+                ? `running — keys go to ${dialect.name} (Esc to release)`
+                : virtualKeyboard
+                  ? 'running — tap the keys below'
+                  : 'running — click screen to type'
+              : 'stopped'}
+          </span>
+        </div>
+      )}
       {error && <div className="emulator-error">{error}</div>}
       {variableWatcher && !virtualKeyboard && (
         <div className="watcher-host" ref={watcherHostRef}>
