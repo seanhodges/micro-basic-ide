@@ -50,6 +50,11 @@ interface IdeState {
   crtEffect: boolean;
   /** On-screen virtual keyboard under the monitor. */
   virtualKeyboard: boolean;
+  /**
+   * Variable watcher panel under the monitor (shares the slot with the virtual
+   * keyboard). Transient: not persisted, always starts closed.
+   */
+  variableWatcher: boolean;
   /** Audible click on virtual key presses. */
   keyboardSound: boolean;
   /** Haptic buzz on virtual key presses (where supported). */
@@ -82,6 +87,7 @@ interface IdeState {
   setEmulatorSpeed(n: number): void;
   setCrtEffect(on: boolean): void;
   setVirtualKeyboard(on: boolean): void;
+  setVariableWatcher(on: boolean): void;
   setKeyboardSound(on: boolean): void;
   setKeyboardHaptics(on: boolean): void;
   setEditorFocused(on: boolean): void;
@@ -146,6 +152,7 @@ export const useIdeStore = create<IdeState>((set) => ({
     typeof localStorage !== 'undefined'
       ? (getVirtualKeyboard() ?? defaultVirtualKeyboard())
       : false,
+  variableWatcher: false,
   keyboardSound:
     typeof localStorage !== 'undefined' ? getKeyboardSound() : false,
   keyboardHaptics:
@@ -219,6 +226,7 @@ export const useIdeStore = create<IdeState>((set) => ({
     persistVirtualKeyboard(on);
     set({ virtualKeyboard: on });
   },
+  setVariableWatcher: (on) => set({ variableWatcher: on }),
   setKeyboardSound: (on) => {
     persistKeyboardSound(on);
     set({ keyboardSound: on });

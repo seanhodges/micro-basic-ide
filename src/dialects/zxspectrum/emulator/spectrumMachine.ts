@@ -1,7 +1,8 @@
 import Z80 from '../../../emulator/z80/z80core.js';
 import type { Z80Core } from '../../../emulator/z80/z80core.js';
-import type { MachineEmulator } from '../../types';
+import type { MachineEmulator, MachineVariable } from '../../types';
 import { SpectrumMemory } from './memory';
+import { readSpectrumVariables } from '../vars';
 import { SpectrumKeyboard } from './keyboard';
 import { renderDisplay, DISPLAY_WIDTH, DISPLAY_HEIGHT } from './display';
 import { buildTap, parseTap } from '../tapfile';
@@ -212,6 +213,10 @@ export class SpectrumMachine implements MachineEmulator {
   /** Direct access for tests and debugging. */
   get mem(): SpectrumMemory {
     return this.memory;
+  }
+
+  readVariables(): MachineVariable[] {
+    return readSpectrumVariables(this.memory);
   }
 
   get borderColor(): number {

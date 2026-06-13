@@ -1,7 +1,8 @@
 import Z80 from '../../../emulator/z80/z80core.js';
 import type { Z80Core } from '../../../emulator/z80/z80core.js';
-import type { MachineEmulator } from '../../types';
+import type { MachineEmulator, MachineVariable } from '../../types';
 import { Zx81Memory } from './memory';
+import { readZx81Variables } from '../vars';
 import { Zx81Keyboard } from './keyboard';
 import { renderDisplay, DISPLAY_WIDTH, DISPLAY_HEIGHT } from './display';
 import { SYSVARS_BASE, D_FILE, ROM_LOAD_TRAP, ROM_POST_LOAD } from '../sysvars';
@@ -191,6 +192,10 @@ export class Zx81Machine implements MachineEmulator {
   /** Direct access for tests and debugging. */
   get mem(): Zx81Memory {
     return this.memory;
+  }
+
+  readVariables(): MachineVariable[] {
+    return readZx81Variables(this.memory);
   }
 
   keyEvent(e: KeyboardEvent, down: boolean): boolean {

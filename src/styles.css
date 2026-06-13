@@ -322,6 +322,11 @@ textarea {
   justify-content: space-between;
 }
 
+.emulator-toggles {
+  display: flex;
+  gap: 6px;
+}
+
 .vk-toggle {
   padding: 2px 8px;
   font-size: 14px;
@@ -333,10 +338,70 @@ textarea {
   color: var(--accent);
 }
 
+.watcher-toggle {
+  font-family: var(--mono, monospace);
+}
+
 .vk-host {
   width: 100%;
   max-width: 600px;
   flex-shrink: 0;
+}
+
+/* ---------- Variable watcher ---------- */
+.watcher-host {
+  width: 100%;
+  max-width: 600px;
+  max-height: 240px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.watcher-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono, monospace);
+  font-size: 13px;
+}
+
+.watcher-table th,
+.watcher-table td {
+  text-align: left;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border, #333);
+}
+
+.watcher-table th {
+  color: var(--text-dim);
+  font-weight: normal;
+}
+
+.watcher-name {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.watcher-kind {
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.watcher-value {
+  width: 100%;
+}
+
+/* The value sits in its own span so a future edit mode can swap it for an
+   input without changing the row layout. */
+.watcher-value-text {
+  display: inline-block;
+  padding: 1px 0;
+  word-break: break-all;
+}
+
+.watcher-empty {
+  padding: 8px;
+  opacity: 0.7;
+  font-size: 13px;
 }
 
 /* Keyboard docked under the code editor (shown while the editor has focus). */
@@ -996,7 +1061,8 @@ code {
     display: none;
   }
 
-  .vk-host {
+  .vk-host,
+  .watcher-host {
     max-width: none;
     max-height: 40vh;
     overflow-y: auto;
@@ -1023,6 +1089,7 @@ code {
    scale proportionally with it, so they stay easy to press. */
 @media (max-width: 768px) and (orientation: portrait) {
   .vk-host,
+  .watcher-host,
   .editor-vk-host {
     max-width: none;
   }

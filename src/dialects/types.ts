@@ -61,6 +61,28 @@ export interface BuildTarget {
   build(source: string, opts: { programName: string }): Promise<Blob>;
 }
 
+/**
+ * One BASIC variable as seen by the variable watcher. System-agnostic: every
+ * dialect that can introspect its running program maps its own storage onto
+ * this shape. Read-only today; {@link editable} and {@link ref} are reserved
+ * so a future "edit at runtime" path needs no structural change.
+ */
+export interface MachineVariable {
+  /** Display name as the user would write it, e.g. "A", "X$", "B()". */
+  name: string;
+  kind: 'number' | 'string' | 'number-array' | 'string-array';
+  /** Human-readable current value (already formatted for display). */
+  value: string;
+  /** Whether this machine can write the variable back. Reserved; unset today. */
+  editable?: boolean;
+  /**
+   * Opaque handle only the originating machine interprets (e.g. a value-byte
+   * address + layout). The app never inspects it; it would be handed back to a
+   * future write path. Reserved.
+   */
+  ref?: unknown;
+}
+
 export interface MachineEmulator {
   reset(): void;
   /** Inject a built image (post-boot) and arrange for it to run. */
@@ -83,6 +105,12 @@ export interface MachineEmulator {
   readonly displayWidth: number;
   readonly displayHeight: number;
   dispose(): void;
+  /**
+   * Snapshot of the running program's BASIC variables, or absent when the
+   * machine can't introspect them. Read-only. The watcher detects support via
+   * `typeof machine.readVariables === 'function'`.
+   */
+  readVariables?(): MachineVariable[];
 }
 
 export interface AiProfile {
