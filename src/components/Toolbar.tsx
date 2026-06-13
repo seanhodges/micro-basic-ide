@@ -132,30 +132,6 @@ export function Toolbar() {
             </div>
           )}
         </div>
-        <button className="desktop-only" onClick={newFile} title="New program">
-          New
-        </button>
-        <button
-          className="desktop-only"
-          onClick={openFile}
-          title="Open a .bas file"
-        >
-          Load
-        </button>
-        <button
-          className="desktop-only"
-          onClick={saveFile}
-          title="Save as .bas"
-        >
-          Save
-        </button>
-        <button
-          className="desktop-only"
-          onClick={openShare}
-          title="Export or send to real hardware"
-        >
-          Share
-        </button>
       </div>
 
       <div className="toolbar-center">

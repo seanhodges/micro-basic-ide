@@ -178,6 +178,8 @@ textarea {
   display: grid;
   /* grid-template-columns is set inline (driven by the split ratio) */
   min-height: 0;
+  /* Anchor for the tablet-landscape keyboard overlay. */
+  position: relative;
 }
 
 .workspace.dragging {
@@ -256,6 +258,16 @@ textarea {
   overflow: auto;
 }
 
+/* Tablet landscape: pin the screen to the top so the bottom-40% keyboard
+   overlay can never cover it. The JS fit caps the canvas to 60% height. */
+.emulator-pane.overlay {
+  justify-content: flex-start;
+}
+
+.emulator-pane.overlay .screen-shell {
+  max-height: 60%;
+}
+
 .screen-shell {
   position: relative;
   border: 14px solid #111;
@@ -322,11 +334,6 @@ textarea {
   justify-content: space-between;
 }
 
-.emulator-toggles {
-  display: flex;
-  gap: 6px;
-}
-
 .vk-toggle {
   padding: 2px 8px;
   font-size: 14px;
@@ -342,10 +349,51 @@ textarea {
   font-family: var(--mono, monospace);
 }
 
-.vk-host {
-  width: 100%;
-  max-width: 600px;
-  flex-shrink: 0;
+/* ---------- Virtual keyboard overlay ---------- */
+/* The single keyboard for every layout: full-width, pinned to the bottom 40%
+   of the workspace, with responsive side padding so keys aren't stretched on
+   wide screens. */
+.workspace-vk-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  z-index: 5;
+  display: flex;
+  padding: 6px clamp(8px, 6vw, 96px) calc(6px + env(safe-area-inset-bottom));
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 16px rgb(0 0 0 / 30%);
+}
+
+/* The keyboard fills the overlay height: only the key rows grow, so keycaps
+   scale to fill the 40% rather than staying at their fixed 58px. */
+.workspace-vk-overlay .virtual-keyboard {
+  flex: 1;
+  min-height: 0;
+}
+
+.workspace-vk-overlay .vk-row {
+  flex: 1;
+  min-height: 0;
+}
+
+.workspace-vk-overlay .vk-key {
+  height: 100%;
+}
+
+/* While the keyboard overlays the editor, pad the editor scroll area so the
+   caret can scroll clear of the bottom 40% overlay. Layout-agnostic. */
+.workspace.kb-open .cm-scroller {
+  padding-bottom: 42vh;
+}
+
+/* Keyboard + watcher toggles relocated to the status bar in overlay mode. */
+.status-toggles {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
 }
 
 /* ---------- Variable watcher ---------- */
@@ -402,15 +450,6 @@ textarea {
   padding: 8px;
   opacity: 0.7;
   font-size: 13px;
-}
-
-/* Keyboard docked under the code editor (shown while the editor has focus). */
-.editor-vk-host {
-  width: 100%;
-  max-width: 600px;
-  flex-shrink: 0;
-  align-self: center;
-  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
 }
 
 .virtual-keyboard {
@@ -811,6 +850,7 @@ textarea {
 /* ---------- Status bar ---------- */
 .status-bar {
   display: flex;
+  align-items: center;
   gap: 18px;
   padding: 4px 12px;
   font-size: 12px;
@@ -1043,6 +1083,12 @@ code {
     z-index: 20;
   }
 
+  /* Lift the run button above the keyboard overlay (bottom 40%) on the editor
+     tab so it isn't hidden behind it. */
+  .workspace.kb-open .fab-run {
+    bottom: calc(40% + 16px);
+  }
+
   .emulator-pane {
     padding: 8px;
   }
@@ -1057,23 +1103,16 @@ code {
     max-width: none;
   }
 
-  .status-bar {
-    display: none;
+  /* Slim status bar: just the emulator status + toggles, right-aligned. */
+  .status-bar.slim {
+    justify-content: flex-end;
+    gap: 10px;
   }
 
-  .vk-host,
   .watcher-host {
     max-width: none;
     max-height: 40vh;
     overflow-y: auto;
-  }
-
-  .vk-key {
-    height: 48px;
-  }
-
-  .vk-key.vk-style-extra {
-    height: 38px;
   }
 
   .vk-pos-center {
@@ -1085,21 +1124,11 @@ code {
 
 /* ---------- Virtual keyboard orientation sizing ---------- */
 
-/* Phone/tablet portrait: the keyboard fills the full width and the keys
-   scale proportionally with it, so they stay easy to press. */
+/* Phone/tablet portrait: the watcher fills the full width. The keyboard keys
+   flex-fill the overlay height, so no per-key sizing is needed here. */
 @media (max-width: 768px) and (orientation: portrait) {
-  .vk-host,
-  .watcher-host,
-  .editor-vk-host {
+  .watcher-host {
     max-width: none;
-  }
-
-  .vk-key {
-    height: clamp(42px, 11.5vw, 60px);
-  }
-
-  .vk-key.vk-style-extra {
-    height: clamp(30px, 8vw, 42px);
   }
 
   .vk-pos-center {
@@ -1107,26 +1136,10 @@ code {
   }
 }
 
-/* Height-constrained landscape (phones): centred with side padding, key
-   heights capped by the viewport so the whole keyboard fits without
-   scrolling and leaves room for the preview / editor text above. */
+/* Height-constrained landscape (phones): the overlay's flex-fill keeps keys
+   inside the bottom 40%; here we just tighten gaps/padding and the legend
+   strips so shallow keys stay legible. */
 @media (orientation: landscape) and (max-height: 560px) {
-  .vk-host,
-  .editor-vk-host {
-    max-width: min(660px, 94vw);
-    margin-inline: auto;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .vk-key {
-    height: clamp(28px, 7vh, 44px);
-  }
-
-  .vk-key.vk-style-extra {
-    height: clamp(22px, 5vh, 32px);
-  }
-
   /* Shallow keys: tighten gaps/padding and shrink the function strip below
      the keycap so the whole keyboard stays under ~46vh (compact mode is
      forced at this height). */

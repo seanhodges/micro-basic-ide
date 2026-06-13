@@ -19,3 +19,7 @@ export function useMediaQuery(query: string): boolean {
     () => window.matchMedia(query).matches,
   );
 }
+
+/** Touch capability is fixed per device, so it's read once at module load. */
+export const HAS_TOUCH =
+  typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;

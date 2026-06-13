@@ -5,12 +5,18 @@ import { Workspace } from './components/Workspace';
 import { AiSettingsDialog } from './components/AiSettingsDialog';
 import { TransferDialog } from './components/TransferDialog';
 import { StatusBar } from './components/StatusBar';
+import { MobileTabBar } from './components/MobileTabBar';
 import { saveAutosave } from './storage/settings';
-import { isMobileViewport } from './app/useMediaQuery';
+import {
+  isMobileViewport,
+  useMediaQuery,
+  MOBILE_QUERY,
+} from './app/useMediaQuery';
 
 export default function App() {
   const requestRun = useIdeStore((s) => s.requestRun);
   const runRequest = useIdeStore((s) => s.runRequest);
+  const isMobile = useMediaQuery(MOBILE_QUERY);
 
   // Autosave the document every 2s while dirty
   useEffect(() => {
@@ -46,6 +52,9 @@ export default function App() {
       <Toolbar />
       <Workspace />
       <StatusBar />
+      {/* The tab bar sits below the workspace + status bar so the keyboard
+          overlay (pinned to the bottom 40% of the workspace) never covers it. */}
+      {isMobile && <MobileTabBar />}
       <AiSettingsDialog />
       <TransferDialog />
     </div>
