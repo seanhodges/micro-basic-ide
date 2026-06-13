@@ -16,6 +16,7 @@ import { CodeMirrorHost } from './CodeMirrorHost';
 import { EmulatorPane, type MachineApi } from './EmulatorPane';
 import { AiPanel } from './AiPanel';
 import { SettingsForm } from './SettingsForm';
+import { MobileTabBar } from './MobileTabBar';
 
 const AI_PANEL_WIDTH = 340;
 const DIVIDER_WIDTH = 6;
@@ -187,6 +188,9 @@ export function Workspace() {
       ref={workspaceRef}
       style={cols ? { gridTemplateColumns: cols } : undefined}
     >
+      {/* On mobile the tab bar sits directly above the panels it controls, so
+          switching tabs swaps the panel shown beneath it. */}
+      {isMobile && <MobileTabBar />}
       <div className={`editor-pane ${hidden('editor')}`}>
         {/* The FAB anchors to this box so the docked keyboard below never
             sits underneath it. */}

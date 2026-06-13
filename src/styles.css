@@ -1047,16 +1047,15 @@ code {
 
   .tab-bar {
     display: flex;
-    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
     background: var(--bg-panel);
-    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .tab-bar button {
     flex: 1;
     padding: 12px 0;
     border: none;
-    border-top: 2px solid transparent;
+    border-bottom: 2px solid transparent;
     border-radius: 0;
     background: none;
     font-size: 13px;
@@ -1064,7 +1063,7 @@ code {
 
   .tab-bar button.active {
     color: var(--accent);
-    border-top-color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 
   .fab-run {
