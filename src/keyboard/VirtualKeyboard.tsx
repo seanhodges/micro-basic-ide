@@ -93,9 +93,11 @@ export function VirtualKeyboard({
   const hapticsRef = useRef(haptics);
   hapticsRef.current = haptics;
 
-  // Editor-target input mode (the ZX81 K/F/G cursor as a selector bar).
-  const editorModes =
-    target.kind === 'editor' ? (layout.editorModes ?? []) : [];
+  // Input mode (the ZX81 K/F/G cursor as a selector bar). Shown for both
+  // targets so the editor and emulator present an identical mode bar; for the
+  // machine target the mode is purely cosmetic (it emphasises a legend and, in
+  // compact mode, picks the secondary legend) — matrix tokens are unaffected.
+  const editorModes = layout.editorModes ?? [];
   const [modeId, setModeId] = useState<string | null>(null);
   useEffect(() => setModeId(null), [layout]);
   const mode =
@@ -413,9 +415,7 @@ export function VirtualKeyboard({
     modeLayerId ??
     (activeLayer.id !== baseLayer.id
       ? activeLayer.id
-      : target.kind === 'editor'
-        ? (modifierLayer?.id ?? legendLayerId)
-        : legendLayerId);
+      : (modifierLayer?.id ?? legendLayerId));
 
   return (
     <div

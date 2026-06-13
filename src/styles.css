@@ -1124,6 +1124,19 @@ code {
 
 /* ---------- Virtual keyboard orientation sizing ---------- */
 
+/* Tablet/desktop landscape: centre the keyboard and cap its width so the keys
+   keep a keyboard-like ratio instead of stretching edge-to-edge (the overlay
+   height stays a fixed 46%). The max-width is tuned against the overlay height. */
+@media (orientation: landscape) and (min-width: 600px) {
+  .workspace-vk-overlay {
+    justify-content: center;
+  }
+
+  .workspace-vk-overlay .virtual-keyboard {
+    max-width: 105vh;
+  }
+}
+
 /* Phone/tablet portrait: the watcher fills the full width. The keyboard keys
    flex-fill the overlay height, so no per-key sizing is needed here. */
 @media (max-width: 768px) and (orientation: portrait) {

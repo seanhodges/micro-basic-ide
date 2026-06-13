@@ -226,6 +226,7 @@ export const spectrumKeyboardLayout: KeyboardLayout = {
     { id: 'abc', name: 'ABC', layer: 'main' },
     { id: 'keyword', name: 'KEYWORD', layer: 'keyword' },
     { id: 'function', name: 'FUNCTION', layer: 'function' },
+    { id: 'symbol', name: 'SYMBOL', layer: 'symbol' },
   ],
   modifiers: [
     { id: 'caps', emits: ['CapsShift'], sticky: true, lockable: true },
