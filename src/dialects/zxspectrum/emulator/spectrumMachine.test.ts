@@ -76,6 +76,23 @@ describe('SpectrumMachine', () => {
     expect(readScreen(machine, 2, 0, 4)).toBe('ROW3');
   });
 
+  it('reads program variables after running', () => {
+    const machine = new SpectrumMachine({ rom });
+    const src =
+      '10 LET A=5\n20 LET B$="HI"\n30 DIM C(3)\n40 LET C(1)=7\n50 FOR I=1 TO 3\n60 STOP\n';
+    const { bytes, errors } = tokenizeProgram(src);
+    expect(errors).toEqual([]);
+    machine.loadProgram(buildTap(bytes));
+    for (let i = 0; i < 120; i++) machine.runFrame();
+    const vars = machine.readVariables();
+    const byName = Object.fromEntries(vars.map((v) => [v.name, v]));
+    expect(byName['A']).toMatchObject({ kind: 'number', value: '5' });
+    expect(byName['B$']).toMatchObject({ kind: 'string', value: '"HI"' });
+    expect(byName['C()']).toMatchObject({ kind: 'number-array' });
+    expect(byName['C()']!.value).toContain('7');
+    expect(byName['I']).toMatchObject({ kind: 'number' });
+  });
+
   it('responds to emulated keypresses via INKEY$', () => {
     const machine = new SpectrumMachine({ rom });
     const src = '10 IF INKEY$="" THEN GO TO 10\n20 PRINT "KEY ";INKEY$\n';

@@ -61,6 +61,24 @@ describe('Zx81Machine', () => {
     expect(displayContains(machine, [0x37, 0x34, 0x3c, 0x1f])).toBe(true);
   });
 
+  it('reads program variables after running', () => {
+    const machine = new Zx81Machine({ rom, ramKb: 16 });
+    const src =
+      '10 LET A=5\n20 LET B$="HI"\n30 DIM C(3)\n40 LET C(1)=7\n50 FOR I=1 TO 3\n60 STOP\n';
+    const { bytes, errors } = tokenizeProgram(src);
+    expect(errors).toEqual([]);
+    machine.loadProgram(buildPFile(bytes));
+    for (let i = 0; i < 400; i++) machine.runFrame();
+    const vars = machine.readVariables();
+    const byName = Object.fromEntries(vars.map((v) => [v.name, v]));
+    expect(byName['A']).toMatchObject({ kind: 'number', value: '5' });
+    expect(byName['B$']).toMatchObject({ kind: 'string', value: '"HI"' });
+    expect(byName['C()']).toMatchObject({ kind: 'number-array' });
+    expect(byName['C()']!.value).toContain('7');
+    // The FOR loop is paused at line 60, so its control variable is live.
+    expect(byName['I']).toMatchObject({ kind: 'number' });
+  });
+
   it('responds to emulated keypresses', () => {
     const machine = new Zx81Machine({ rom, ramKb: 16 });
     const src = '10 IF INKEY$="" THEN GOTO 10\n20 PRINT "KEY ";INKEY$\n';

@@ -8,6 +8,7 @@ import {
 } from '../app/screenScale';
 import type { MachineEmulator } from '../dialects/types';
 import { VirtualKeyboard } from '../keyboard/VirtualKeyboard';
+import { VariableWatcher } from './VariableWatcher';
 
 const romCache = new Map<string, Promise<Uint8Array>>();
 
@@ -38,6 +39,8 @@ export function EmulatorPane() {
   const setEmulatorStatus = useIdeStore((s) => s.setEmulatorStatus);
   const virtualKeyboard = useIdeStore((s) => s.virtualKeyboard);
   const setVirtualKeyboard = useIdeStore((s) => s.setVirtualKeyboard);
+  const variableWatcher = useIdeStore((s) => s.variableWatcher);
+  const setVariableWatcher = useIdeStore((s) => s.setVariableWatcher);
   const keyboardSound = useIdeStore((s) => s.keyboardSound);
   const keyboardHaptics = useIdeStore((s) => s.keyboardHaptics);
 
@@ -50,6 +53,7 @@ export function EmulatorPane() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const keyboardHostRef = useRef<HTMLDivElement>(null);
+  const watcherHostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const machineRef = useRef<MachineEmulator | null>(null);
   const frameHookRef = useRef<(() => void) | null>(null);
@@ -94,6 +98,7 @@ export function EmulatorPane() {
     let cancelled = false;
     (async () => {
       setError('');
+      setVariableWatcher(false); // running hides the watcher (back to the screen)
       try {
         const result = dialect.tokenize(source);
         if (result.errors.length > 0) {
@@ -189,6 +194,12 @@ export function EmulatorPane() {
     machineRef.current?.setSpeed(speed);
   }, [speed]);
 
+  // The on-screen keyboard and the variable watcher share the slot below the
+  // screen; opening the keyboard closes the watcher.
+  useEffect(() => {
+    if (virtualKeyboard) setVariableWatcher(false);
+  }, [virtualKeyboard, setVariableWatcher]);
+
   // Integer-perfect scaling on mobile: fires on rotation, address-bar
   // collapse, and when the Preview tab becomes visible again.
   useEffect(() => {
@@ -197,11 +208,16 @@ export function EmulatorPane() {
     if (!container) return;
     const update = () => {
       const rect = container.getBoundingClientRect();
-      // The virtual keyboard shares the pane; the screen gets what's left.
-      const kbHeight = keyboardHostRef.current?.offsetHeight ?? 0;
+      // The keyboard or the watcher shares the pane (only one shows at a time);
+      // the screen gets what's left.
+      const panelHeight =
+        (keyboardHostRef.current?.offsetHeight ?? 0) +
+        (watcherHostRef.current?.offsetHeight ?? 0);
       const availWidth = rect.width - 2 * MOBILE_BEZEL;
       const availHeight =
-        rect.height - 2 * MOBILE_BEZEL - (kbHeight > 0 ? kbHeight + 10 : 0);
+        rect.height -
+        2 * MOBILE_BEZEL -
+        (panelHeight > 0 ? panelHeight + 10 : 0);
       let next = computeIntegerScale(
         availWidth,
         availHeight,
@@ -222,8 +238,15 @@ export function EmulatorPane() {
     const observer = new ResizeObserver(update);
     observer.observe(container);
     if (keyboardHostRef.current) observer.observe(keyboardHostRef.current);
+    if (watcherHostRef.current) observer.observe(watcherHostRef.current);
     return () => observer.disconnect();
-  }, [isMobile, virtualKeyboard, display.width, display.height]);
+  }, [
+    isMobile,
+    virtualKeyboard,
+    variableWatcher,
+    display.width,
+    display.height,
+  ]);
 
   const getMachine = useCallback(() => machineRef.current, []);
   const registerFrameHook = useCallback((cb: (() => void) | null) => {
@@ -280,18 +303,36 @@ export function EmulatorPane() {
                 : 'running — click screen to type'
             : 'stopped'}
         </span>
-        <button
-          className={`vk-toggle ${virtualKeyboard ? 'active' : ''}`}
-          aria-pressed={virtualKeyboard}
-          title={
-            virtualKeyboard
-              ? 'Hide on-screen keyboard'
-              : 'Show on-screen keyboard'
-          }
-          onClick={() => setVirtualKeyboard(!virtualKeyboard)}
-        >
-          ⌨
-        </button>
+        <div className="emulator-toggles">
+          <button
+            className={`vk-toggle watcher-toggle ${variableWatcher ? 'active' : ''}`}
+            aria-pressed={variableWatcher}
+            title={
+              variableWatcher
+                ? 'Hide variable watcher'
+                : 'Show variable watcher'
+            }
+            onClick={() => {
+              const next = !variableWatcher;
+              setVariableWatcher(next);
+              if (next) setVirtualKeyboard(false); // mutually exclusive
+            }}
+          >
+            {'{x}'}
+          </button>
+          <button
+            className={`vk-toggle ${virtualKeyboard ? 'active' : ''}`}
+            aria-pressed={virtualKeyboard}
+            title={
+              virtualKeyboard
+                ? 'Hide on-screen keyboard'
+                : 'Show on-screen keyboard'
+            }
+            onClick={() => setVirtualKeyboard(!virtualKeyboard)}
+          >
+            ⌨
+          </button>
+        </div>
       </div>
       {error && <div className="emulator-error">{error}</div>}
       {virtualKeyboard && (
@@ -302,6 +343,14 @@ export function EmulatorPane() {
             enabled={emulatorStatus === 'running'}
             sound={keyboardSound}
             haptics={keyboardHaptics}
+          />
+        </div>
+      )}
+      {variableWatcher && !virtualKeyboard && (
+        <div className="watcher-host" ref={watcherHostRef}>
+          <VariableWatcher
+            getMachine={getMachine}
+            running={emulatorStatus === 'running'}
           />
         </div>
       )}
